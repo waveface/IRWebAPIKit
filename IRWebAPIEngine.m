@@ -252,8 +252,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	
 	NSDictionary *finalizedContext = [self requestContextByTransformingContext:[self baseRequestContextWithMethodName:inMethodName arguments:inArgumentsOrNil options:inOptionsOrNil] forMethodNamed:inMethodName];
 
-    NSLog(@"Send: %@", [finalizedContext objectForKey:@"kIRWebAPIEngineRequestHTTPBaseURL"]);
-		
 	NSURLRequest *request = [self requestWithContext:finalizedContext];
 
 	void (^returnedBlock) (void) = ^ {
@@ -322,6 +320,8 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			nil] forConnection:connection];
 			
+            NSLog(@"Send: %@", [finalizedContext objectForKey:@"kIRWebAPIEngineRequestHTTPBaseURL"]);
+
 			[connection start];
 		
 		});
