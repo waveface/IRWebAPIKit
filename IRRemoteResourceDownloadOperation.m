@@ -151,6 +151,8 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 		//	Do not mutate the URL
 		//	self.url = usedRequest.URL;
 		
+        NSLog(@"Send: %@", usedRequest.URL);
+
 		[self.connection start];
 		
 	}];
@@ -236,6 +238,8 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 
 - (void) connectionDidFinishLoading:(NSURLConnection *)connection {
 
+    NSLog(@"Success: %@", [self underlyingRequest].URL);
+
 	if ([self isCancelled])
 			return;	
 	
@@ -280,6 +284,8 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 }
 
 - (void) connection:(NSURLConnection *)connection didFailWithError:(NSError *)error {
+
+    NSLog(@"Fail: %@", [self underlyingRequest].URL);
 
 	if ([self isCancelled])
 		return;
