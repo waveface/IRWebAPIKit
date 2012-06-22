@@ -141,10 +141,8 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 
 - (void) ensureResponseParserExistence {
 	
-	if (self.parser) return;
-	
-	NSLog(@"Warning: IRWebAPIEngine is designed to work with a parser.  Without one, the response will be sent as a default dictionary.");
-	self.parser = IRWebAPIResponseDefaultParserMake();
+	if (!self.parser)
+		self.parser = IRWebAPIResponseDefaultParserMake();
 	
 }
 
@@ -177,8 +175,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	NSMutableDictionary *displayedContext = [inContext mutableCopy];
 	[displayedContext setObject:@"< REMOVED> " forKey:kIRWebAPIEngineRequestHTTPBody];
 	
-	NSLog(@"Context: %@", displayedContext);
-
 //	This can potentially clog up the wirings
 //	IRWebAPIResponseParser defaultParser = IRWebAPIResponseDefaultParserMake();
 //	NSDictionary *debugOutput = defaultParser(inData);
@@ -262,8 +258,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			[self setInternalSuccessHandler: ^ (NSData *inResponse) {
 			
-                NSLog(@"Success: %@", request.URL);
-
 				NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 			
 				BOOL shouldRetry = NO, notifyDelegate = NO;
@@ -296,8 +290,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			[self setInternalFailureHandler: ^ {
 			
-                NSLog(@"Fail: %@", request.URL);
-
 				BOOL shouldRetry = NO, notifyDelegate = NO;
 				NSMutableDictionary *responseContext = [self internalResponseContextForConnection:connection];
 				NSDictionary *transformedResopnse = [self responseByTransformingResponse:[NSDictionary dictionary] withRequestContext:responseContext forMethodNamed:inMethodName];
@@ -320,8 +312,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			nil] forConnection:connection];
 			
-            NSLog(@"Send: %@", request.URL);
-
 			[connection start];
 		
 		});
@@ -370,8 +360,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 		
 		} @catch (NSException *e) {
 		
-			NSLog(@"Handle Exception: %@ %@", e, inConnection);
-			
 			[self internalFailureHandlerForConnection:inConnection]();
 		
 		}
