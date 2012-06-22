@@ -251,7 +251,7 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	};
 	
 	NSDictionary *finalizedContext = [self requestContextByTransformingContext:[self baseRequestContextWithMethodName:inMethodName arguments:inArgumentsOrNil options:inOptionsOrNil] forMethodNamed:inMethodName];
-		
+
 	NSURLRequest *request = [self requestWithContext:finalizedContext];
 
 	void (^returnedBlock) (void) = ^ {
@@ -262,6 +262,8 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			[self setInternalSuccessHandler: ^ (NSData *inResponse) {
 			
+                NSLog(@"Success: %@", request.URL);
+
 				NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 			
 				BOOL shouldRetry = NO, notifyDelegate = NO;
@@ -294,6 +296,8 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			[self setInternalFailureHandler: ^ {
 			
+                NSLog(@"Fail: %@", request.URL);
+
 				BOOL shouldRetry = NO, notifyDelegate = NO;
 				NSMutableDictionary *responseContext = [self internalResponseContextForConnection:connection];
 				NSDictionary *transformedResopnse = [self responseByTransformingResponse:[NSDictionary dictionary] withRequestContext:responseContext forMethodNamed:inMethodName];
@@ -316,6 +320,8 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 			
 			nil] forConnection:connection];
 			
+            NSLog(@"Send: %@", request.URL);
+
 			[connection start];
 		
 		});
