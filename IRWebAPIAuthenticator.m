@@ -38,19 +38,6 @@
 
 }
 
-- (void) dealloc {
-
-	self.globalRequestPreTransformerBlock = nil;
-	self.globalRequestPostTransformerBlock = nil;
-	self.globalResponsePreTransformerBlock = nil;
-	self.globalResponsePostTransformerBlock = nil;
-	
-	self.currentCredentials = nil;
-
-	[super dealloc];
-
-}
-
 - (void) associateWithEngine:(IRWebAPIEngine *)inEngine {
 
 	if (self.globalRequestPreTransformerBlock)

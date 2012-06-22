@@ -8,28 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
-
-
-
-
-#ifndef __IRWebAPIKitDefines__
-#define __IRWebAPIKitDefines__
-
-typedef enum {
-
-	IRWebAPIInterfaceCallbackStyleConcatenatedCallback, // if writing framework, use this one
-	IRWebAPIInterfaceCallbackStyleManyCallbacks // app code and proof of concepts can use this 
-
-} IRWebAPIInterfaceCallbackStyle;
-
-#endif
-
-
-
-
-
 @class IRWebAPIEngine;
-@class IRWebAPIContext;
+@class IRWebAPIEngineContext;
 @class IRWebAPIAuthenticator;
 @class IRWebAPIInterface;
 

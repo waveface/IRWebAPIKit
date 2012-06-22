@@ -15,14 +15,14 @@ NSString * const kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey = @"IRWeb
 
 + (IRWebAPIRequestContextTransformer) defaultFormURLEncodingTransformer {
 
-	return [[(^ (NSDictionary *inOriginalContext) {
+	return [(^ (NSDictionary *inOriginalContext) {
 	
 		NSDictionary *formNamesToContents = [inOriginalContext objectForKey:kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey];
 		
 		if (![formNamesToContents count])
 			return inOriginalContext;
 		
-		NSMutableDictionary *returnedContext = [[inOriginalContext mutableCopy] autorelease];
+		NSMutableDictionary *returnedContext = [inOriginalContext mutableCopy];
 		NSMutableDictionary *headerFields = [returnedContext objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields];
 		
 		if (!headerFields) {
@@ -43,7 +43,7 @@ NSString * const kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey = @"IRWeb
 		
 		return (NSDictionary *)returnedContext;
 	
-	}) copy] autorelease];
+	}) copy];
 
 }
 

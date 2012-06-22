@@ -16,17 +16,17 @@ NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey = @"kIRWebA
 
 + (IRWebAPIRequestContextTransformer) defaultFormMultipartTransformer {
 
-	return [[(^ (NSDictionary *inOriginalContext) {
+	return [(^ (NSDictionary *inOriginalContext) {
 	
 		NSDictionary *formNamesToContents = [inOriginalContext objectForKey:kIRWebAPIEngineRequestContextFormMultipartFieldsKey];
 		
 		if(!formNamesToContents || ([formNamesToContents count] == 0))
 		return inOriginalContext;
 		
-		NSMutableDictionary *returnedContext = [[inOriginalContext mutableCopy] autorelease];
+		NSMutableDictionary *returnedContext = [inOriginalContext mutableCopy];
 		
 		NSError *error;
-		NSURL *fileHandleURL = [[[self class] newTemporaryFileURL] autorelease];
+		NSURL *fileHandleURL = [[self class] newTemporaryFileURL];
 		
 		if (![[NSFileManager defaultManager] createFileAtPath:[fileHandleURL path] contents:[NSData data] attributes:nil]) {
 		
@@ -167,7 +167,7 @@ NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey = @"kIRWebA
 		
 		return (NSDictionary *)returnedContext;
 	
-	}) copy] autorelease];
+	}) copy];
 
 }
 

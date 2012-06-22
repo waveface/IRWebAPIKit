@@ -21,7 +21,7 @@ extern NSString * const kIRWebAPIEngineUnderlyingError;
 @interface IRWebAPIEngine : NSObject
 
 @property (nonatomic, readwrite, copy) IRWebAPIResponseParser parser;
-@property (nonatomic, readonly, retain) IRWebAPIContext *context;
+@property (nonatomic, readonly, retain) IRWebAPIEngineContext *context;
 
 @property (nonatomic, readonly, retain) NSMutableArray *globalRequestPreTransformers;
 @property (nonatomic, readonly, retain) NSMutableDictionary *requestTransformers;
@@ -31,7 +31,7 @@ extern NSString * const kIRWebAPIEngineUnderlyingError;
 @property (nonatomic, readonly, retain) NSMutableDictionary *responseTransformers;
 @property (nonatomic, readonly, retain) NSMutableArray *globalResponsePostTransformers;
 
-- (id) initWithContext:(IRWebAPIContext *)inContext;
+- (id) initWithContext:(IRWebAPIEngineContext *)inContext;
 
 - (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil validator:(IRWebAPIResposeValidator)inValidator successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler;
 

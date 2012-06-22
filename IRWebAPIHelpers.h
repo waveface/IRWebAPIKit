@@ -24,8 +24,6 @@
 
 extern BOOL IRWebAPIKitValidResponse (id inObject);
 extern NSString * IRWebAPIKitStringValue (id<NSObject> inObject);
-extern id IRWebAPIKitWrapNil(id inObjectOrNil);
-extern id IRWebAPIKitNumberOrNull (NSNumber *aNumber);
 
 
 # pragma mark Encoding, Decoding and Conversion

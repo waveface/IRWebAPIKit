@@ -34,8 +34,7 @@ NSString * const kIRWebAPIEngineLocallocalCacheDirectoryPath = @"kIRWebAPIEngine
 	
 	};
 	
-	NSURL *fileURL = [[NSURL fileURLWithPath:[preferredCacheDirectoryPath stringByAppendingPathComponent:IRWebAPIKitNonce()]] retain];	
-	return fileURL;
+	return [NSURL fileURLWithPath:[preferredCacheDirectoryPath stringByAppendingPathComponent:IRWebAPIKitNonce()]];
 	
 }
 
@@ -62,7 +61,7 @@ NSString * const kIRWebAPIEngineLocallocalCacheDirectoryPath = @"kIRWebAPIEngine
 
 + (IRWebAPIResponseContextTransformer) defaultCleanUpTemporaryFilesResponseTransformer {
 
-	return [[(^ (NSDictionary *inParsedResponse, NSDictionary *inResponseContext) {
+	return [(^ (NSDictionary *inParsedResponse, NSDictionary *inResponseContext) {
 	
 		NSArray *cachedFileURLs = [[inResponseContext objectForKey:kIRWebAPIEngineResponseContextOriginalRequestContext] objectForKey:kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey];
 		
@@ -77,7 +76,7 @@ NSString * const kIRWebAPIEngineLocallocalCacheDirectoryPath = @"kIRWebAPIEngine
 
 		return inParsedResponse;
 	
-	}) copy] autorelease];
+	}) copy];
 
 }
 

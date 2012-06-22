@@ -22,34 +22,9 @@
 @synthesize consumerKey, consumerSecret, retrievedToken, retrievedTokenSecret;
 @synthesize currentCredentials;
 
-- (id) initWithEngine:(IRWebAPIEngine *)inEngine {
-
-	self = [super initWithEngine:inEngine]; if (!self) return nil;
-	
-	consumerKey = nil;
-	consumerSecret = nil;
-	retrievedToken = nil;
-	retrievedTokenSecret = nil;
-	
-	xAuthAccessTokenBaseURL = nil;
-	authorizeURL = nil;
-	
-	return self;
-
-}
-
-- (void) dealloc {
-
-	self.consumerKey = nil;
-	self.consumerSecret = nil;
-	self.retrievedToken = nil;
-	self.retrievedTokenSecret = nil;
-	
-	[super dealloc];
-
-}
-
 - (void) createTransformerBlocks {
+
+	__weak IRWebAPIXOAuthAuthenticator *wSelf = self;
 
 	self.globalRequestPostTransformerBlock = ^ (NSDictionary *inOriginalContext) {
 		
@@ -82,14 +57,12 @@
 		
 		}
 		
-		[mutatedContextHeaderFields setObject:[self oAuthHeaderValueForRequestContext:mutatedContext] forKey:@"Authorization"];
+		[mutatedContextHeaderFields setObject:[wSelf oAuthHeaderValueForRequestContext:mutatedContext] forKey:@"Authorization"];
 		
 		if (removesQueryParameters)
 		[mutatedContext setObject:[NSMutableArray array] forKey:kIRWebAPIEngineRequestHTTPQueryParameters];
 		
-		IRWebAPIKitLog(@"mutatedContext %@", mutatedContext);
-			
-		return [mutatedContext autorelease];
+		return mutatedContext;
 	
 	};
 
@@ -167,8 +140,6 @@
 
 - (NSDictionary *) oAuthHeaderValuesForHTTPMethod:(NSString *)inHTTPMethod baseURL:(NSURL *)inBaseURL arguments:(NSDictionary *)inMethodArguments {
 
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-
 	NSMutableDictionary *signatureStringParameters = [NSMutableDictionary dictionary];
 	
 	NSMutableDictionary *oAuthParameters = [NSMutableDictionary dictionaryWithObjectsAndKeys:
@@ -207,12 +178,7 @@
 	
 	) forKey:@"oauth_signature"];	
 	
-	[oAuthParameters retain];
-	[pool drain];
-	
-	IRWebAPIKitLog(@"oAuthHeaderValuesForHTTPMethod -> %@", oAuthParameters);
-	
-	return [oAuthParameters autorelease];
+	return oAuthParameters;
 	
 }
 

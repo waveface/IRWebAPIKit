@@ -41,7 +41,8 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 @implementation IRRemoteResourceDownloadOperation
 
 @synthesize path, mimeType, url, processedBytes, totalBytes, preferredByteOffset, executing, finished, cancelled;
-@synthesize fileHandle, connection;
+@synthesize fileHandle = _fileHandle;
+@synthesize connection = _connection;
 @synthesize actualDispatchQueue;
 @synthesize onMain;
 @synthesize appendedCompletionBlocks;
@@ -52,34 +53,21 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 	NSParameterAssert(aRemoteURL);
 	NSParameterAssert(aLocalPath);
 
-	IRRemoteResourceDownloadOperation *returnedOperation = [[[self alloc] init] autorelease];
+	IRRemoteResourceDownloadOperation *returnedOperation = [[self alloc] init];
 	
 	returnedOperation.url = aRemoteURL;
 	returnedOperation.path = aLocalPath;
 	returnedOperation.onMain = aPrelude;
 	returnedOperation.completionBlock = aBlock;
+	
 	return returnedOperation;
 
 }
 
 - (void) dealloc {
 
-	[mimeType release];
-
-	[path release];
-	[url release];
-	[fileHandle release];
+	[_connection cancel];
 	
-	__block NSURLConnection *nrConnection = connection;
-	dispatch_async(dispatch_get_main_queue(), ^ {
-		[nrConnection release];
-	});
-	
-	[onMain release];
-	[appendedCompletionBlocks release];
-	
-	[super dealloc];
-
 }
 
 - (void) onMainQueue:(void(^)(void))aBlock {
@@ -135,18 +123,19 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 	
 	[self onMainQueue: ^ {
 	
-		NSMutableURLRequest *usedRequest = [NSMutableURLRequest requestWithURL:self.url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10];
-		NSURLConnection *usedConnection = [[[NSURLConnection alloc] initWithRequest:usedRequest delegate:self startImmediately:NO] autorelease];
+		NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.url cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:10];
 		
-		objc_setAssociatedObject(usedConnection, &kIRRemoteResourcesDownloadOperation_connectionRequest, usedRequest, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-		self.connection = usedConnection;
+		NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
+		
+		objc_setAssociatedObject(connection, &kIRRemoteResourcesDownloadOperation_connectionRequest, request, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		self.connection = connection;
 		
 		[self.delegate remoteResourceDownloadOperationWillBegin:self];
 		
-		usedConnection = [[[NSURLConnection alloc] initWithRequest:usedRequest delegate:self startImmediately:NO] autorelease];
+		connection = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
 		
-		objc_setAssociatedObject(usedConnection, &kIRRemoteResourcesDownloadOperation_connectionRequest, usedRequest, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
-		self.connection = usedConnection;
+		objc_setAssociatedObject(connection, &kIRRemoteResourcesDownloadOperation_connectionRequest, request, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+		self.connection = connection;
 		
 		//	Do not mutate the URL
 		//	self.url = usedRequest.URL;
@@ -248,13 +237,16 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 		
 			//	If there is a MIME type available, rename the underlying file
 			
-			NSFileManager *fm = [NSFileManager defaultManager];
+			CFStringRef const tag = (__bridge CFStringRef)self.mimeType;
+			NSString *utiType = (NSString *)CFBridgingRelease(UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, tag, NULL));
 			
-			NSString *utiType = [(NSString *)UTTypeCreatePreferredIdentifierForTag(kUTTagClassMIMEType, (CFStringRef)self.mimeType, NULL) autorelease];
-			NSString *pathExtension = [(NSString *)UTTypeCopyPreferredTagWithClass((CFStringRef)utiType, kUTTagClassFilenameExtension) autorelease];
+			CFStringRef const tagClass = kUTTagClassFilenameExtension;
+			NSString *pathExtension = (NSString *)CFBridgingRelease(UTTypeCopyPreferredTagWithClass((__bridge CFStringRef)utiType, tagClass));
 			
 			if (pathExtension) {
 
+				NSFileManager * const fm = [NSFileManager defaultManager];
+				
 				NSString *fromPath = self.path;
 				NSString *toPath = [[self.path stringByDeletingPathExtension] stringByAppendingPathExtension:pathExtension];
 				NSError *error = nil;
@@ -305,8 +297,9 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 	if (!aRedirectResponse)
 		return aRequest;
 		
-	NSMutableURLRequest *mutatedRequest = [[[self underlyingRequest] mutableCopy] autorelease];
+	NSMutableURLRequest *mutatedRequest = [[self underlyingRequest] mutableCopy];
 	mutatedRequest.URL = [aRequest URL];
+	
 	return mutatedRequest;
 
 }
@@ -382,17 +375,17 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 
 - (NSMutableArray *) appendedCompletionBlocks {
 
-	if (appendedCompletionBlocks)
-		return appendedCompletionBlocks;
+	if (!appendedCompletionBlocks) {
+		appendedCompletionBlocks = [NSMutableArray array];
+	}
 	
-	appendedCompletionBlocks = [[NSMutableArray array] retain];
 	return appendedCompletionBlocks;
 
 }
 
 - (void) appendCompletionBlock:(void (^)(void))aBlock {
 
-	[self.appendedCompletionBlocks addObject:[[aBlock copy] autorelease]];
+	[self.appendedCompletionBlocks addObject:[aBlock copy]];
 
 }
 
@@ -400,7 +393,7 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 
 	@synchronized (self) {	
 
-		for (void(^aBlock)(void) in [[self.appendedCompletionBlocks copy] autorelease])
+		for (void(^aBlock)(void) in self.appendedCompletionBlocks)
 			aBlock();
 		
 		self.appendedCompletionBlocks = [NSMutableArray array];
@@ -414,7 +407,7 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 	if (!self.path || !self.url)
 		return nil;
 
-	__block IRRemoteResourceDownloadOperation *continuationOperation = [[[[self class] alloc] init] autorelease];
+	__block IRRemoteResourceDownloadOperation *continuationOperation = [[[self class] alloc] init];
 	continuationOperation.path = self.path;
 	continuationOperation.url = self.url;
 	continuationOperation.preferredByteOffset = self.processedBytes;

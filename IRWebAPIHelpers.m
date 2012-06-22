@@ -23,8 +23,8 @@ NSString * IRWebAPIKitStringValue (id<NSObject> inObject) {
 	if ([inObject isKindOfClass:[NSString class]])
 	return (NSString *)inObject;
 		
-	if ([inObject respondsToSelector:@selector(stringValue)])
-	return IRWebAPIKitStringValue([inObject performSelector:@selector(stringValue)]);
+	if ([inObject isKindOfClass:[NSValue class]])
+		return [inObject performSelector:@selector(stringValue)];
 	
 	return [inObject description];
 
@@ -37,24 +37,6 @@ BOOL IRWebAPIKitValidResponse (id inObject) {
 	return YES;
 
 }
-
-id IRWebAPIKitWrapNil(id inObjectOrNil) {
-
-	if (inObjectOrNil == nil)
-	return [NSNull null];
-	
-	return inObjectOrNil;
-
-}
-
-id IRWebAPIKitNumberOrNull (NSNumber *aNumber) {
-
-	if (!(BOOL)[aNumber boolValue])
-	return [NSNull null];
-	
-	return aNumber;
-	
-};
 
 
 
@@ -70,7 +52,7 @@ NSString * IRWebAPIKitRFC3986EncodedStringMake (id<NSObject> inObject) {
 //	From Google’s GData Toolkit
 //	http://oauth.net/core/1.0a/#encoding_parameters
 
-	CFStringRef originalString = (CFStringRef)inString;
+	CFStringRef originalString = (__bridge CFStringRef)inString;
 
 	CFStringRef leaveUnescaped = CFSTR("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-._~");
 	CFStringRef forceEscaped =  CFSTR("%!$&'()*+,/:;=?@");
@@ -81,11 +63,9 @@ NSString * IRWebAPIKitRFC3986EncodedStringMake (id<NSObject> inObject) {
 
 		escapedStr = CFURLCreateStringByAddingPercentEscapes(kCFAllocatorDefault, originalString, leaveUnescaped, forceEscaped, kCFStringEncodingUTF8);
 		
-		[(id)CFMakeCollectable(escapedStr) autorelease];
-
 	}
 	
-	return (NSString *)escapedStr;
+	return (NSString *)CFBridgingRelease(escapedStr);
 	
 }
 
@@ -93,22 +73,13 @@ NSString * IRWebAPIKitRFC3986DecodedStringMake (id<NSObject> inObject) {
 
 	NSString *inString = IRWebAPIKitStringValue(inObject);
 	
-//	From Google’s GData Toolkit
-//	http://oauth.net/core/1.0a/#encoding_parameters
+	if (!inString)
+		return nil;
+	
+	//	From Google’s GData Toolkit
+	//	http://oauth.net/core/1.0a/#encoding_parameters
 
-	CFStringRef originalString = (CFStringRef)inString;
-
-	CFStringRef unescapedStr = NULL;
-
-	if (inString) {
-
-		unescapedStr = CFURLCreateStringByReplacingPercentEscapesUsingEncoding(kCFAllocatorDefault, originalString, CFSTR(""), kCFStringEncodingUTF8);
-		
-		[(id)CFMakeCollectable(unescapedStr) autorelease];
-
-	}
-
-	return (NSString *)unescapedStr;
+	return (NSString *)CFBridgingRelease(CFURLCreateStringByReplacingPercentEscapesUsingEncoding(kCFAllocatorDefault, (__bridge CFStringRef)inString, CFSTR(""), kCFStringEncodingUTF8));
 	
 }
 
@@ -153,7 +124,7 @@ NSString * IRWebAPIKitBase64StringFromNSDataMake (NSData *inData) {
 
 	}
 
-	return [[[NSString alloc] initWithData:buffer encoding:NSASCIIStringEncoding] autorelease];
+	return [[NSString alloc] initWithData:buffer encoding:NSASCIIStringEncoding];
 
 }
 
@@ -174,7 +145,7 @@ NSString * IRWebAPIStringByDecodingXMLEntities (NSString *inString) {
 
 	[scanner setCharactersToBeSkipped:nil];
 
-	entityNamesToNumbers = entityNamesToNumbers ? entityNamesToNumbers : [IRWebAPIKitXMLEntityNumbersFromNames() retain];
+	entityNamesToNumbers = entityNamesToNumbers ? entityNamesToNumbers : IRWebAPIKitXMLEntityNumbersFromNames();
 	
 	NSString* (^scanEntityNumber) (NSScanner **inScanner) = ^ (NSScanner **inScanner) {
 	
@@ -200,8 +171,6 @@ NSString * IRWebAPIStringByDecodingXMLEntities (NSString *inString) {
 		NSString *unknownEntity = @"";
 		[scanner scanUpToCharactersFromSet:boundaryCharacterSet intoString:&unknownEntity];
 		
-		IRWebAPIKitLog(@"Expected numeric character entity but got &#%@%@;", xForHex, unknownEntity);
-	
 		return (NSString *)[NSString stringWithFormat:@"&#%@%@", xForHex, unknownEntity];
 	
 	};
@@ -262,7 +231,7 @@ NSString * IRWebAPIKitNonce () {
 	CFUUIDRef theUUID = CFUUIDCreate(kCFAllocatorDefault);
 	if (!theUUID) return nil;
 	
-	uuid = [(NSString *)CFUUIDCreateString(kCFAllocatorDefault, theUUID) autorelease];
+	uuid = (NSString *)CFBridgingRelease(CFUUIDCreateString(kCFAllocatorDefault, theUUID));
 	CFRelease(theUUID);
 	
 	return [NSString stringWithFormat:@"%@-%@", IRWebAPIKitTimestamp(), uuid];
@@ -277,8 +246,6 @@ NSString * IRWebAPIKitNonce () {
 # pragma mark Crypto Helpers
 
 NSString * IRWebAPIKitOAuthSignatureBaseStringMake (NSString *inHTTPMethod, NSURL *inBaseURL, NSDictionary *inQueryParameters) {
-
-	IRWebAPIKitLog(@"IRWebAPIKitOAuthSignatureBaseStringMake -> %@ %@ %@", inHTTPMethod, inBaseURL, inQueryParameters);
 
 	NSString * (^uriEncode) (NSString *) = ^ NSString * (NSString *inString) {
 
@@ -315,45 +282,27 @@ NSString * IRWebAPIKitOAuthSignatureBaseStringMake (NSString *inHTTPMethod, NSUR
 
 	}
 	
-	IRWebAPIKitLog(@"IRWebAPIKitOAuthSignatureBaseStringMake -> %@", returnedString);
-	
 	return returnedString;
 
 }
 
 NSString * IRWebAPIKitHMACSHA1 (NSString *inConsumerSecret, NSString *inTokenSecret, NSString *inPayload) {
 
-	IRWebAPIKitLog(@"IRWebAPIKitHMACSHA1 -> %@ %@ %@", inConsumerSecret, inTokenSecret, inPayload);
-
-//	From Google’s GData Toolkit
+	//	From Google’s GData Toolkit
 
 	NSString *encodedConsumerSecret = IRWebAPIKitRFC3986EncodedStringMake(inConsumerSecret);
+	if (!encodedConsumerSecret)
+		encodedConsumerSecret = @"";
+	
 	NSString *encodedTokenSecret = IRWebAPIKitRFC3986EncodedStringMake(inTokenSecret);
+	if (!encodedTokenSecret)
+		encodedTokenSecret = @"";
 
-	NSString *key = [NSString stringWithFormat:@"%@&%@",
-	
-		encodedConsumerSecret ? encodedConsumerSecret : @"",
-		encodedTokenSecret ? encodedTokenSecret : @""
-		
-	];
-	
+	NSString *key = [NSString stringWithFormat:@"%@&%@", encodedConsumerSecret, encodedTokenSecret];
 	NSMutableData *sigData = [NSMutableData dataWithLength:CC_SHA1_DIGEST_LENGTH];
 	
-	CCHmac(
-	
-		kCCHmacAlgSHA1,
-
-		[key UTF8String], [key length],
-		[inPayload UTF8String], [inPayload length],
-		[sigData mutableBytes]
-	 
-	);
-	
-	NSString *returnedString = IRWebAPIKitBase64StringFromNSDataMake(sigData);
-	
-	IRWebAPIKitLog(@"IRWebAPIKitHMACSHA1 -> %@", returnedString);
-	
-	return returnedString;
+	CCHmac(kCCHmacAlgSHA1, [key UTF8String], [key length], [inPayload UTF8String], [inPayload length], [sigData mutableBytes]);
+	return IRWebAPIKitBase64StringFromNSDataMake(sigData);
   
 }
 
@@ -369,7 +318,7 @@ NSString * IRWebAPIKitMIMETypeOfExtension (NSString *inExtension) {
 	if (!inExtension)
 	return nil;
 	
-	CFStringRef UTI = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (CFStringRef)inExtension, NULL);
+	CFStringRef UTI = UTTypeCreatePreferredIdentifierForTag(kUTTagClassFilenameExtension, (CFStringRef)CFBridgingRetain(inExtension), NULL);
 	
 	if(!UTI)
 	return nil;
@@ -380,7 +329,7 @@ NSString * IRWebAPIKitMIMETypeOfExtension (NSString *inExtension) {
 	if (!registeredType)
 	return nil;
 		
-	return [(NSString *)registeredType autorelease];
+	return (NSString *)CFBridgingRelease(registeredType);
 
 }
 
