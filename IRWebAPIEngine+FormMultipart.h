@@ -7,12 +7,20 @@
 //
 
 #import "IRWebAPIEngine.h"
+#import "IRWebAPIRequestContext.h"
 
+@interface IRWebAPIRequestContext (FormMultipart)
 
-extern NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey;
+@property (nonatomic, readonly, copy) NSDictionary *formMultipartFields;
+- (void) removeAllFormMultipartFieldValues;
+- (void) setValue:(id)obj forFormMultipartField:(NSString *)key;
+
+@end
 
 @interface IRWebAPIEngine (FormMultipart)
 
 + (IRWebAPIRequestContextTransformer) defaultFormMultipartTransformer;
 
 @end
+
+extern NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey;

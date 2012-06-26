@@ -386,8 +386,8 @@ NSDictionary *IRQueryParametersFromString (NSString *query) {
 
 	[queryPairExpression enumerateMatchesInString:query options:0 range:queryFullRange usingBlock:^(NSTextCheckingResult *result, NSMatchingFlags flags, BOOL *stop) {
 	
-		__block NSString *currentArgumentName = nil;
-		__block NSString *currentArgumentValue = nil;
+		NSString *currentArgumentName = nil;
+		NSString *currentArgumentValue = nil;
 		
 		NSUInteger numberOfRanges = result.numberOfRanges;
 		if (!numberOfRanges)

@@ -7,6 +7,7 @@
 //
 
 #import "IRWebAPIKit.h"
+#import "IRWebAPIRequestContext.h"
 #import "IRWebAPIXOAuthAuthenticator.h"
 
 
@@ -14,55 +15,67 @@
 
 @property (nonatomic, retain, readwrite) IRWebAPICredentials *currentCredentials;
 
+- (NSDictionary *) oAuthHeaderValuesForHTTPMethod:(NSString *)inHTTPMethod baseURL:(NSURL *)inBaseURL arguments:(NSDictionary *)inMethodArguments;
+- (NSString *) oAuthHeaderValueForHTTPMethod:(NSString *)inHTTPMethod baseURL:(NSURL *)inBaseURL arguments:(NSDictionary *)inMethodArguments;
+
+//	The former returns a dictionary, which is used by the latter, which concatenates everything into a string ready for use in the Authorization header or another header, e.g. X-Verify-Credentials-Authorization
+
+
+- (NSString *) oAuthHeaderValueForRequestContext:(IRWebAPIRequestContext *)inRequestContext;
+
+//	Convenience.
+
 @end
 
 
 @implementation IRWebAPIXOAuthAuthenticator
 
-@synthesize consumerKey, consumerSecret, retrievedToken, retrievedTokenSecret;
-@synthesize currentCredentials;
+@synthesize consumerKey = _consumerKey;
+@synthesize consumerSecret = _consumerSecret;
+@synthesize retrievedToken = _retrievedToken;
+@synthesize retrievedTokenSecret = _retrievedTokenSecret;
+@synthesize currentCredentials = _currentCredentials;
 
 - (void) createTransformerBlocks {
 
 	__weak IRWebAPIXOAuthAuthenticator *wSelf = self;
 
-	self.globalRequestPostTransformerBlock = ^ (NSDictionary *inOriginalContext) {
+	self.globalRequestPostTransformerBlock = ^ (IRWebAPIRequestContext *context) {
 		
-		NSMutableDictionary *mutatedContext = [inOriginalContext mutableCopy];
-		NSMutableDictionary *mutatedContextHeaderFields = (NSMutableDictionary *)[mutatedContext objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields];
-	
-		BOOL	isRequestAuthenticated = (BOOL)(!!(self.retrievedTokenSecret)),
-			isPOST = [@"POST" isEqual:[mutatedContext valueForKey:kIRWebAPIEngineRequestHTTPMethod]],
+		BOOL isRequestAuthenticated = (BOOL)(!!(self.retrievedTokenSecret)),
+			isPOST = [@"POST" isEqual:context.method],
 			removesQueryParameters = NO;
-					
+		
 		if (isRequestAuthenticated && isPOST) {
 		
-			[mutatedContext setObject:((^ {
+			[context setBody:((^ {
 
 				NSMutableArray *POSTBodyElements = [NSMutableArray array];
 				
-				[[mutatedContext objectForKey:kIRWebAPIEngineRequestHTTPQueryParameters] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+				[context.queryParams enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
 					
 					[POSTBodyElements addObject:[NSString stringWithFormat:@"%@=%@", key, IRWebAPIKitRFC3986EncodedStringMake(obj)]];
 					
 				}];
-			
+				
 				return [[POSTBodyElements componentsJoinedByString:@"&"] dataUsingEncoding:NSUTF8StringEncoding];
 			
-			})()) forKey:kIRWebAPIEngineRequestHTTPBody];
+			})())];
 			
-			[mutatedContextHeaderFields setObject:@"application/x-www-form-urlencoded" forKey:@"Content-Type"];
+			[context setValue:@"application/x-www-form-urlencoded" forHeaderField:@"Content-Type"];
 			
 			removesQueryParameters = YES;
 		
 		}
 		
-		[mutatedContextHeaderFields setObject:[wSelf oAuthHeaderValueForRequestContext:mutatedContext] forKey:@"Authorization"];
+		id authHeaderFieldValue = [wSelf oAuthHeaderValueForRequestContext:context];
+		
+		[context setValue:authHeaderFieldValue forHeaderField:@"Authorization"];
 		
 		if (removesQueryParameters)
-		[mutatedContext setObject:[NSMutableArray array] forKey:kIRWebAPIEngineRequestHTTPQueryParameters];
-		
-		return mutatedContext;
+			[context removeAllQueryParamValues];
+			
+		return context;
 	
 	};
 
@@ -80,30 +93,25 @@
 }
 
 - (void) authenticateCredentials:(IRWebAPICredentials *)inCredentials onSuccess:(IRWebAPIAuthenticatorCallback)successHandler onFailure:(IRWebAPIAuthenticatorCallback)failureHandler {
-
-	[self.engine fireAPIRequestNamed:@"oauth/access_token" withArguments:[NSDictionary dictionaryWithObjectsAndKeys:
+	
+	IRWebAPIRequestOperation *operation = [self.engine operationForMethod:@"oauth/access_token" arguments:[NSDictionary dictionaryWithObjectsAndKeys:
 	
 		inCredentials.identifier, @"x_auth_username",
 		inCredentials.qualifier, @"x_auth_password",
 		@"client_auth", @"x_auth_mode",
 
-	nil] options:[NSDictionary dictionaryWithObjectsAndKeys:
+	nil] validator: ^ (NSDictionary *response, IRWebAPIRequestContext *context) {
 	
-		IRWebAPIResponseQueryResponseParserMake(), kIRWebAPIEngineParser,
-		@"POST", kIRWebAPIEngineRequestHTTPMethod,
-			
-	nil] validator: ^ (NSDictionary *inResponseOrNil, NSDictionary *inRequestContext) {
-	
-		if (!([IRWebAPIInterface defaultNoErrorValidator])(inResponseOrNil, inRequestContext))
+		if (!([IRWebAPIInterface defaultNoErrorValidator])(response, context))
 		return NO;
 	
 		for (id key in [NSArray arrayWithObjects:@"oauth_token", @"oauth_token_secret", nil])
-		if (!IRWebAPIKitValidResponse([inResponseOrNil objectForKey:key]))
-		return NO;
+			if (!IRWebAPIKitValidResponse([response objectForKey:key]))
+				return NO;
 		
 		return YES;
 	
-	} successHandler: ^ (NSDictionary *inResponseOrNil, NSDictionary *inResponseContext, BOOL *outNotifyDelegate, BOOL *outShouldRetry) {
+	} successBlock: ^ (NSDictionary *inResponseOrNil, IRWebAPIRequestContext *context) {
 		
 		self.retrievedToken = [inResponseOrNil valueForKey:@"oauth_token"];
 		self.retrievedTokenSecret = [inResponseOrNil valueForKey:@"oauth_token_secret"];
@@ -117,21 +125,24 @@
 		NSParameterAssert(self.currentCredentials && self.currentCredentials.authenticated);
 
 		if (successHandler)
-		successHandler(self, YES, outShouldRetry);
+			successHandler(self, YES);
 		
-	} failureHandler: ^ (NSDictionary *inResponseOrNil, NSDictionary *inResponseContext, BOOL *outNotifyDelegate, BOOL *outShouldRetry) {
+	} failureBlock: ^ (NSDictionary *inResponseOrNil, IRWebAPIRequestContext *context) {
 	
 		self.currentCredentials.authenticated = NO;
 		self.retrievedToken = nil;
 		self.retrievedTokenSecret = nil;
 	
-		NSLog(@"XOAuth FAIL %@, %@", inResponseOrNil, inResponseContext);
-	
 		if (failureHandler)
-		failureHandler(self, NO, outShouldRetry);
+			failureHandler(self, NO);
 	
 	}];
-
+	
+	operation.context.parser = IRWebAPIResponseQueryResponseParserMake();
+	operation.context.method = @"POST";
+	
+	[operation start];
+	
 }
 
 
@@ -204,9 +215,13 @@
 	
 }
 
-- (NSString *) oAuthHeaderValueForRequestContext:(NSDictionary *)inRequestContext {
+- (NSString *) oAuthHeaderValueForRequestContext:(IRWebAPIRequestContext *)context {
 
-	return 	[self oAuthHeaderValueForHTTPMethod:[inRequestContext valueForKey:kIRWebAPIEngineRequestHTTPMethod] baseURL:[inRequestContext valueForKey:kIRWebAPIEngineRequestHTTPBaseURL] arguments:[inRequestContext valueForKey:kIRWebAPIEngineRequestHTTPQueryParameters]];
+	NSString *method = context.method;
+	NSURL *baseURL = context.baseURL;
+	NSDictionary *arguments = context.queryParams;
+
+	return 	[self oAuthHeaderValueForHTTPMethod:method baseURL:baseURL arguments:arguments];
 
 }
 

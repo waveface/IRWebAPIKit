@@ -7,11 +7,15 @@
 //
 
 #import "IRWebAPIEngine.h"
+#import "IRWebAPIRequestContext.h"
 
-#import <dispatch/dispatch.h>
+@interface IRWebAPIRequestContext (LocalCaching)
 
+@property (nonatomic, readonly, copy) NSArray *cacheFileURLs;
+- (void) removeAllCacheFileURLValues;
+- (void) addCacheFileURL:(NSURL *)obj;
 
-extern NSString * const kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey;
+@end
 
 @interface IRWebAPIEngine (LocalCaching)
 

@@ -380,32 +380,36 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 		
 	}
 
-	__block __typeof__(self) nrSelf = self;
+	__weak IRRemoteResourcesManager *wSelf = self;
 	
-	[nrSelf performInBackground: ^ {
+	[wSelf performInBackground: ^ {
 	
-		__block IRRemoteResourceDownloadOperation *operation = [self operationWithURL:anURL];
+		IRRemoteResourceDownloadOperation *operation = [wSelf operationWithURL:anURL];
 		
 		if (!operation) {
 			
-			operation = [self prospectiveOperationForURL:anURL enqueue:YES];
+			operation = [wSelf prospectiveOperationForURL:anURL enqueue:YES];
 			operation.queuePriority = priority;
 			
-			[nrSelf addOperation:operation];
+			__weak IRRemoteResourceDownloadOperation *wOperation = operation;
+			
+			[wSelf addOperation:operation];
 			[operation appendCompletionBlock:^{
-				[nrSelf removeOperation:operation];
+				[wSelf removeOperation:wOperation];
 			}];
 						
 		} else {
 		
-			if (forcesReload && [nrSelf.queue.operations containsObject:operation]) {
+			if (forcesReload && [wSelf.queue.operations containsObject:operation]) {
 			
 				operation = [operation continuationOperationCancellingCurrentOperation:YES];
 				operation.queuePriority = priority;
 				
-				[nrSelf addOperation:operation];
+				__weak IRRemoteResourceDownloadOperation *wOperation = operation;
+				
+				[wSelf addOperation:operation];
 				[operation appendCompletionBlock:^{
-					[nrSelf removeOperation:operation];
+					[wSelf removeOperation:wOperation];
 				}];
 			
 			}
@@ -420,7 +424,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 				if (![[NSFileManager defaultManager] fileExistsAtPath:capturedPath]) {
 				
-					[nrSelf performInBackground:^{
+					[wSelf performInBackground:^{
 						aBlock(nil);
 					}];
 					
@@ -428,7 +432,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 				}
 				
-				[nrSelf performInBackground: ^ {
+				[wSelf performInBackground: ^ {
 				
 					NSCParameterAssert([[NSFileManager defaultManager] fileExistsAtPath:capturedPath]);
 					aBlock([NSURL fileURLWithPath:capturedPath]);
@@ -443,7 +447,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 			[self beginSuspendingOperationQueue];
 			
-			[nrSelf performInBackground: ^ {
+			[wSelf performInBackground: ^ {
 				
 				[self enqueueOperationsIfNeeded];
 				

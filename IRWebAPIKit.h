@@ -15,6 +15,12 @@
 
 #import "IRWebAPIEngine.h"
 #import "IRWebAPIEngineContext.h"
+
+#import "IRWebAPIEngine+OperationFiring.h"
+#import "IRWebAPIEngine+FormMultipart.h"
+#import "IRWebAPIEngine+FormURLEncoding.h"
+#import "IRWebAPIEngine+LocalCaching.h"
+
 #import "IRWebAPIAuthenticator.h"
 #import "IRWebAPICredentials.h"
 #import "IRWebAPIInterface.h"
@@ -31,7 +37,8 @@
 
 #import "IRRemoteResourcesManager.h"
 
-
+#import "IRWebAPIRequestContext.h"
+#import "IRWebAPIRequestOperation.h"
 
 
 

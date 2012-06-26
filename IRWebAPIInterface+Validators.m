@@ -11,13 +11,11 @@
 
 @implementation IRWebAPIInterface (Validators)
 
-+ (IRWebAPIResposeValidator) defaultNoErrorValidator {
++ (IRWebAPIResponseValidator) defaultNoErrorValidator {
 
-	return [(^ (NSDictionary *inResponseOrNil, NSDictionary *inResponseContext) {
+	return [(^ (NSDictionary *response, IRWebAPIRequestContext *context) {
 	
-		NSHTTPURLResponse *response = (NSHTTPURLResponse *)[inResponseContext objectForKey:kIRWebAPIEngineResponseContextURLResponse];
-		
-		return (response.statusCode == 200);
+		return (context.urlResponse.statusCode == 200);
 	
 	}) copy];
 

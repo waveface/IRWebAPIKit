@@ -8,12 +8,18 @@
 
 #import "IRWebAPIEngine.h"
 
-extern NSString * const kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey;
+@interface IRWebAPIRequestContext (FormURLEncoding)
 
-NSData * IRWebAPIEngineFormURLEncodedDataWithDictionary (NSDictionary *dictionary);
+@property (nonatomic, readonly, copy) NSDictionary *formURLEncodingFields;
+- (void) removeAllFormURLEncodingFieldValues;
+- (void) setValue:(id)obj forFormURLEncodingField:(NSString *)key;
+
+@end
 
 @interface IRWebAPIEngine (FormURLEncoding)
 
 + (IRWebAPIRequestContextTransformer) defaultFormURLEncodingTransformer;
 
 @end
+
+extern NSData * IRWebAPIEngineFormURLEncodedDataWithDictionary (NSDictionary *formNamesToContents);

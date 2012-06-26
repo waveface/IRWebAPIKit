@@ -9,39 +9,77 @@
 #import "IRWebAPIHelpers.h"
 #import "IRWebAPIEngine+FormURLEncoding.h"
 
-NSString * const kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey = @"IRWebAPIEngineRequestContextFormURLEncodingFields";
+extern NSData * IRWebAPIEngineFormURLEncodedDataWithDictionary (NSDictionary *dictionary);
+
+static NSString * const kFormURLEncodingFields = @"-[IRWebAPIRequestContext(FormURLEncoding) formURLEncodingFields]";
+
+@implementation IRWebAPIRequestContext (FormURLEncoding)
+
+- (NSDictionary *) formURLEncodingFields {
+
+	NSMutableDictionary *formURLEncodingFields = objc_getAssociatedObject(self, &kFormURLEncodingFields);
+	
+	if (!formURLEncodingFields) {
+		formURLEncodingFields = [NSMutableDictionary dictionary];
+		objc_setAssociatedObject(self, &kFormURLEncodingFields, formURLEncodingFields, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	
+	return [formURLEncodingFields copy];
+
+}
+
+- (void) removeAllFormURLEncodingFieldValues {
+
+	[self willChangeValueForKey:@"formURLEncodingFields"];
+	objc_setAssociatedObject(self, &kFormURLEncodingFields, nil, OBJC_ASSOCIATION_ASSIGN);
+	[self didChangeValueForKey:@"formURLEncodingFields"];
+
+}
+
+- (void) setValue:(id)obj forFormURLEncodingField:(NSString *)key {
+
+	NSMutableDictionary *formURLEncodingFields = objc_getAssociatedObject(self, &kFormURLEncodingFields);
+	
+	if (!formURLEncodingFields) {
+		formURLEncodingFields = [NSMutableDictionary dictionary];
+		objc_setAssociatedObject(self, &kFormURLEncodingFields, formURLEncodingFields, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	
+	[self willChangeValueForKey:@"formURLEncodingFields"];
+	
+	if (obj) {
+		[formURLEncodingFields setObject:obj forKey:key];
+	} else {
+		[formURLEncodingFields removeObjectForKey:key];
+	}
+	
+	[self didChangeValueForKey:@"formURLEncodingFields"];
+
+}
+
+@end
+
 
 @implementation IRWebAPIEngine (FormURLEncoding)
 
 + (IRWebAPIRequestContextTransformer) defaultFormURLEncodingTransformer {
 
-	return [(^ (NSDictionary *inOriginalContext) {
+	return [(^ (IRWebAPIRequestContext *context) {
 	
-		NSDictionary *formNamesToContents = [inOriginalContext objectForKey:kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey];
+		NSDictionary *formURLEncodingFields = context.formURLEncodingFields;
+	
+		if (![formURLEncodingFields count])
+			return context;
 		
-		if (![formNamesToContents count])
-			return inOriginalContext;
+		[context setValue:@"8bit" forHeaderField:@"Content-Transfer-Encoding"];
+		[context setValue:@"application/x-www-form-urlencoded" forHeaderField:@"Content-Type"];
 		
-		NSMutableDictionary *returnedContext = [inOriginalContext mutableCopy];
-		NSMutableDictionary *headerFields = [returnedContext objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields];
+		[context setBody:IRWebAPIEngineFormURLEncodedDataWithDictionary(formURLEncodingFields)];
+		[context removeAllFormURLEncodingFieldValues];
 		
-		if (!headerFields) {
-			headerFields = [NSMutableDictionary dictionary];
-			[returnedContext setObject:headerFields forKey:kIRWebAPIEngineRequestHTTPHeaderFields];
-		}
+		[context setMethod:@"POST"];
 		
-		[headerFields setObject:@"8bit" forKey:@"Content-Transfer-Encoding"];
-		[headerFields setObject:@"application/x-www-form-urlencoded" forKey:@"Content-Type"];
-		
-		NSData *sentData = IRWebAPIEngineFormURLEncodedDataWithDictionary(formNamesToContents);
-		
-		[returnedContext setObject:sentData forKey:kIRWebAPIEngineRequestHTTPBody];
-		
-		[returnedContext removeObjectForKey:kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey];
-		
-		[returnedContext setObject:@"POST" forKey:kIRWebAPIEngineRequestHTTPMethod];
-		
-		return (NSDictionary *)returnedContext;
+		return context;
 	
 	}) copy];
 

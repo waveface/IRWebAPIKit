@@ -7,21 +7,17 @@
 //
 
 #import <Foundation/Foundation.h>
-#import "IRWebAPIKit.h"
 
-extern NSString * const kIRWebAPIEngineResponseDictionaryIncomingData;
-extern NSString * const kIRWebAPIEngineResponseDictionaryOutgoingContext;
-extern NSString * const kIRWebAPIEngineAssociatedDataStore;
-extern NSString * const kIRWebAPIEngineAssociatedResponseContext;
-extern NSString * const kIRWebAPIEngineAssociatedSuccessHandler;
-extern NSString * const kIRWebAPIEngineAssociatedFailureHandler;
-extern NSString * const kIRWebAPIEngineUnderlyingError;
+#import "IRWebAPIKitDefines.h"
 
+@class IRWebAPIRequestOperation, IRWebAPIEngineContext;
 
 @interface IRWebAPIEngine : NSObject
 
-@property (nonatomic, readwrite, copy) IRWebAPIResponseParser parser;
-@property (nonatomic, readonly, retain) IRWebAPIEngineContext *context;
+- (id) initWithContext:(IRWebAPIEngineContext *)inContext;
+
+@property (nonatomic, readonly, strong) IRWebAPIEngineContext *context;
+@property (nonatomic, readonly, strong) NSOperationQueue *queue;
 
 @property (nonatomic, readonly, retain) NSMutableArray *globalRequestPreTransformers;
 @property (nonatomic, readonly, retain) NSMutableDictionary *requestTransformers;
@@ -31,28 +27,8 @@ extern NSString * const kIRWebAPIEngineUnderlyingError;
 @property (nonatomic, readonly, retain) NSMutableDictionary *responseTransformers;
 @property (nonatomic, readonly, retain) NSMutableArray *globalResponsePostTransformers;
 
-- (id) initWithContext:(IRWebAPIEngineContext *)inContext;
+- (IRWebAPIRequestOperation *) operationForMethod:(NSString *)method arguments:(NSDictionary *)arguments validator:(IRWebAPIResponseValidator)validator successBlock:(IRWebAPICallback)successBlock failureBlock:(IRWebAPICallback)failureBlock;
 
-- (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil validator:(IRWebAPIResposeValidator)inValidator successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler;
-
-- (NSMutableArray *) requestTransformersForMethodNamed:(NSString *)inMethodName;
-- (NSMutableArray *) responseTransformersForMethodNamed:(NSString *)inMethodName;
-
-//	Convenience.  Putting them in a category does not assure compiler checking.
-
-- (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler;
-
-- (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler;
+- (IRWebAPIRequestOperation *) operationForMethod:(NSString *)method arguments:(NSDictionary *)arguments contextOverride:(void(^)(IRWebAPIRequestContext *))overrideBlock validator:(IRWebAPIResponseValidator)validator successBlock:(IRWebAPICallback)successBlock failureBlock:(IRWebAPICallback)failureBlock;
 
 @end
-
-
-
-
-
-#import "IRWebAPIEngine+LocalCaching.h"
-#import "IRWebAPIEngine+FormMultipart.h"
-
-
-
-

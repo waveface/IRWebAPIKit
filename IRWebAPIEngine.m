@@ -8,28 +8,11 @@
 
 #import <objc/runtime.h>
 #import "IRWebAPIEngine.h"
-
-
-
-
-
-NSString * const kIRWebAPIEngineResponseDictionaryIncomingData = @"kIRWebAPIEngineResponseDictionaryIncomingData";
-NSString * const kIRWebAPIEngineResponseDictionaryOutgoingContext = @"kIRWebAPIEngineResponseDictionaryOutgoingContext";
-
-NSString * const kIRWebAPIEngineAssociatedDataStore = @"kIRWebAPIEngineAssociatedDataStore";
-NSString * const kIRWebAPIEngineAssociatedResponseContext = @"kIRWebAPIEngineAssociatedResponseContext";
-NSString * const kIRWebAPIEngineAssociatedSuccessHandler = @"kIRWebAPIEngineAssociatedSuccessHandler";
-NSString * const kIRWebAPIEngineAssociatedFailureHandler = @"kIRWebAPIEngineAssociatedFailureHandler";
-
-NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingError";
-
-
-
-
+#import "IRWebAPIRequestContext.h"
+#import "IRWebAPIRequestOperation.h"
+#import "IRWebAPIEngineContext.h"
 
 @interface IRWebAPIEngine ()
-
-@property (nonatomic, readwrite, retain) IRWebAPIEngineContext *context;
 
 @property (nonatomic, readwrite, retain) NSMutableArray *globalRequestPreTransformers;
 @property (nonatomic, readwrite, retain) NSMutableDictionary *requestTransformers;
@@ -39,52 +22,23 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 @property (nonatomic, readwrite, retain) NSMutableDictionary *responseTransformers;
 @property (nonatomic, readwrite, retain) NSMutableArray *globalResponsePostTransformers;
 
-@property (nonatomic, readwrite, assign) dispatch_queue_t sharedDispatchQueue;
+- (IRWebAPIRequestContext *) requestContextByTransformingContext:(IRWebAPIRequestContext *)inContext forMethodNamed:(NSString *)inMethodName;
 
-
-- (void) setInternalDataStore:(NSMutableData *)inDataStore forConnection:(NSURLConnection *)inConnection;
-- (NSMutableData *) internalDataStoreForConnection:(NSURLConnection *)inConnection;
-
-- (void) setInternalResponseContext:(NSMutableDictionary *)inResponseContext forConnection:(NSURLConnection *)inConnection;
-- (NSMutableDictionary *) internalResponseContextForConnection:(NSURLConnection *)inConnection;
-
-- (void) setInternalSuccessHandler:(void (^)(NSData *inResponse))inSuccessHandler forConnection:(NSURLConnection *)inConnection;
-- (void (^)(NSData *inResponse)) internalSuccessHandlerForConnection:(NSURLConnection *)inConnection;
-
-- (void) setInternalFailureHandler:(void (^)(void))inFailureHandler forConnection:(NSURLConnection *)inConnection;
-- (void (^)(void)) internalFailureHandlerForConnection:(NSURLConnection *)inConnection;
-
-
-- (IRWebAPIEngineExecutionBlock) executionBlockForAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil validator:(IRWebAPIResposeValidator)inValidator successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler;
-
-- (void) ensureResponseParserExistence;
-
-- (NSDictionary *) baseRequestContextWithMethodName:(NSString *)inMethodName arguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil;
-- (NSDictionary *) requestContextByTransformingContext:(NSDictionary *)inContext forMethodNamed:(NSString *)inMethodName;
-- (NSURLRequest *) requestWithContext:(NSDictionary *)inContext;
-
-- (NSDictionary *) parsedResponseForData:(NSData *)inData withContext:(NSDictionary *)inContext;
-- (void) handleUnparsableResponseForData:(NSData *)inData context:(NSDictionary *)inContext;
-
-- (NSDictionary *) responseByTransformingResponse:(NSDictionary *)inResponse withRequestContext:(NSDictionary *)inRequestContext forMethodNamed:(NSString *)inMethodName;
-
-- (void) cleanUpForConnection:(NSURLConnection *)inConnection;
+- (NSDictionary *) responseByTransformingResponse:(NSDictionary *)inResponse withRequestContext:(IRWebAPIRequestContext *)inRequestContext forMethodNamed:(NSString *)inMethodName;
 
 @end
 
 
-
-
-
 @implementation IRWebAPIEngine
 
-@synthesize parser, context;
-@synthesize globalRequestPreTransformers, requestTransformers, globalRequestPostTransformers;
-@synthesize globalResponsePreTransformers, responseTransformers, globalResponsePostTransformers;
-@synthesize sharedDispatchQueue;
-
-# pragma mark -
-# pragma mark Initializationand Memory Management
+@synthesize context = _context;
+@synthesize queue = _queue;
+@synthesize globalRequestPreTransformers = _globalRequestPreTransformers;
+@synthesize requestTransformers = _requestTransformers;
+@synthesize globalRequestPostTransformers = _globalRequestPostTransformers;
+@synthesize globalResponsePreTransformers = _globalResponsePreTransformers;
+@synthesize responseTransformers = _responseTransformers;
+@synthesize globalResponsePostTransformers = _globalResponsePostTransformers;
 
 - (id) initWithContext:(IRWebAPIEngineContext *)inContext {
 
@@ -92,18 +46,19 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	if (!self)
 		return nil;
 	
-	context = inContext;
+	_context = inContext;
 	
-	self.globalRequestPreTransformers = [NSMutableArray array];
-	self.requestTransformers = [NSMutableDictionary dictionary];
-	self.globalRequestPostTransformers = [NSMutableArray array];
-
-	self.globalResponsePreTransformers = [NSMutableArray array];
-	self.responseTransformers = [NSMutableDictionary dictionary];
-	self.globalResponsePostTransformers = [NSMutableArray array];
+	_queue = [[NSOperationQueue alloc] init];
+	_queue.maxConcurrentOperationCount = 8;
 	
-	self.sharedDispatchQueue = dispatch_queue_create("com.iridia.WebAPIEngine.queue.main", NULL);
-
+	_globalRequestPreTransformers = [NSMutableArray array];
+	_requestTransformers = [NSMutableDictionary dictionary];
+	_globalRequestPostTransformers = [NSMutableArray array];
+	
+	_globalResponsePreTransformers = [NSMutableArray array];
+	_responseTransformers = [NSMutableDictionary dictionary];
+	_globalResponsePostTransformers = [NSMutableArray array];
+	
 	return self;
 
 }
@@ -114,351 +69,74 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 
 }
 
-- (void) dealloc {
+- (IRWebAPIRequestOperation *) operationForMethod:(NSString *)method arguments:(NSDictionary *)arguments validator:(IRWebAPIResponseValidator)validator successBlock:(IRWebAPICallback)successBlock failureBlock:(IRWebAPICallback)failureBlock {
 
-#if !OS_OBJECT_USE_OBJC
-	dispatch_release(sharedDispatchQueue);
-#endif
+	return [self operationForMethod:method arguments:arguments contextOverride:nil validator:validator successBlock:successBlock failureBlock:failureBlock];
 
 }
 
-
-
-
-
-# pragma mark -
-# pragma mark Helpers
-
-- (void) ensureResponseParserExistence {
-	
-	if (!self.parser)
-		self.parser = IRWebAPIResponseDefaultParserMake();
-	
-}
-
-- (NSDictionary *) parsedResponseForData:(NSData *)inData withContext:(NSDictionary *)inContext {
-
-	IRWebAPIResponseParser parserBlock = [inContext objectForKey:kIRWebAPIEngineParser];
-	
-	NSDictionary *parsedResponse = parserBlock(inData);		
-	
-	if (parsedResponse)
-	return parsedResponse;
-	
-	[self handleUnparsableResponseForData:inData context:inContext];
-
-	return [NSDictionary dictionaryWithObjectsAndKeys:
-	
-		inData, kIRWebAPIEngineResponseDictionaryIncomingData,
-		inContext, kIRWebAPIEngineResponseDictionaryOutgoingContext,
-	
-	nil];
-
-}
-
-- (void) handleUnparsableResponseForData:(NSData *)inData context:(NSDictionary *)inContext {
-
-	NSLog(@"%@ %s Warning: unparsable response.  Resetting returned response to an empty dictionary.", self, __PRETTY_FUNCTION__);
-	
-	return;
-	
-	NSMutableDictionary *displayedContext = [inContext mutableCopy];
-	[displayedContext setObject:@"< REMOVED> " forKey:kIRWebAPIEngineRequestHTTPBody];
-	
-//	This can potentially clog up the wirings
-//	IRWebAPIResponseParser defaultParser = IRWebAPIResponseDefaultParserMake();
-//	NSDictionary *debugOutput = defaultParser(inData);
-//	NSLog(@"Default parser returns %@.", debugOutput ? (id<NSObject>)debugOutput : (id<NSObject>)@"- null -");
-
-}
-
-- (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler {
-
-	dispatch_async(self.sharedDispatchQueue, ^ {
-	
-		dispatch_async(dispatch_get_current_queue(), [self executionBlockForAPIRequestNamed:inMethodName withArguments:inArgumentsOrNil options:nil validator:nil successHandler:inSuccessHandler failureHandler:inFailureHandler]);
-	
-	});
-	
-}
-
-- (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil validator:(IRWebAPIResposeValidator)inValidator successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler {
-
-	dispatch_async(self.sharedDispatchQueue, ^ {
-	
-		dispatch_async(dispatch_get_current_queue(), [self executionBlockForAPIRequestNamed:inMethodName withArguments:inArgumentsOrNil options:inOptionsOrNil validator:inValidator successHandler:inSuccessHandler failureHandler:inFailureHandler]);
-		
-	});
-
-}
-
-- (void) fireAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler {
-
-	dispatch_async(self.sharedDispatchQueue, ^ {
-	
-		dispatch_async(dispatch_get_current_queue(), [self executionBlockForAPIRequestNamed:inMethodName withArguments:inArgumentsOrNil options:inOptionsOrNil validator:nil successHandler:inSuccessHandler failureHandler:inFailureHandler]);
-		
-	});
-	
-}
-
-- (void) enqueueAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler {
-
-	dispatch_async(self.sharedDispatchQueue, ^ {
-	
-		dispatch_async(self.sharedDispatchQueue, [self executionBlockForAPIRequestNamed:inMethodName withArguments:inArgumentsOrNil options:inOptionsOrNil validator:nil successHandler:inSuccessHandler failureHandler:inFailureHandler]);
-		
-	});
-		
-}
-
-
-
-
-	
-	
-# pragma mark -
-# pragma mark Core
-
-- (IRWebAPIEngineExecutionBlock) executionBlockForAPIRequestNamed:(NSString *)inMethodName withArguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil validator:(IRWebAPIResposeValidator)inValidator successHandler:(IRWebAPICallback)inSuccessHandler failureHandler:(IRWebAPICallback)inFailureHandler {
+- (IRWebAPIRequestOperation *) operationForMethod:(NSString *)method arguments:(NSDictionary *)arguments contextOverride:(void(^)(IRWebAPIRequestContext *))overrideBlock validator:(IRWebAPIResponseValidator)validator successBlock:(IRWebAPICallback)successBlock failureBlock:(IRWebAPICallback)failureBlock {
 
 	__weak IRWebAPIEngine *wSelf = self;
 
-	[self ensureResponseParserExistence];
-
-	void (^retryHandler)(void) = ^ {
+	IRWebAPIRequestContext *baseContext = [IRWebAPIRequestContext new];
+	baseContext.baseURL = [self.context baseURLForMethodNamed:method];
+	baseContext.engineMethod = method;
 	
-		[self enqueueAPIRequestNamed:inMethodName withArguments:inArgumentsOrNil options:inOptionsOrNil successHandler:inSuccessHandler failureHandler:inFailureHandler];
+	[arguments enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+		[baseContext setValue:obj forQueryParam:key];
+	}];
 	
-	};
+	if (overrideBlock)
+		overrideBlock(baseContext);
 	
-	void (^notifyDelegateHandler)(void) = ^ {
+	IRWebAPIRequestContext *finalizedContext = [self requestContextByTransformingContext:baseContext forMethodNamed:method];
+	IRWebAPIRequestOperation *operation = [[IRWebAPIRequestOperation alloc] initWithContext:finalizedContext];
 	
-		NSLog(@"Notifying delegate of connection finalization");
+	__weak IRWebAPIRequestOperation *wOperation = operation;
 	
-	};
+	[operation setCompletionBlock:^{
 	
-	NSDictionary *finalizedContext = [self requestContextByTransformingContext:[self baseRequestContextWithMethodName:inMethodName arguments:inArgumentsOrNil options:inOptionsOrNil] forMethodNamed:inMethodName];
-
-	NSURLRequest *request = [self requestWithContext:finalizedContext];
-	
-	void (^returnedBlock) (void) = ^ {
-			
+		IRWebAPIRequestState state = wOperation.state;
+		IRWebAPIRequestContext *context = wOperation.context;
+		NSDictionary *response = (NSDictionary *)wOperation.result;
+		
 		dispatch_async(dispatch_get_main_queue(), ^{
-
-			NSURLConnection *connection = [[NSURLConnection alloc] initWithRequest:request delegate:self];
 			
-			[self setInternalSuccessHandler: ^ (NSData *inResponse) {
+			NSCParameterAssert((state == IRWebAPIRequestStateSucceeded) || (state == IRWebAPIRequestStateFailed));
 			
-				BOOL shouldRetry = NO, notifyDelegate = NO;
-				
-				NSDictionary *responseContext = [wSelf internalResponseContextForConnection:connection];
-				NSDictionary *parsedResponse = [wSelf parsedResponseForData:inResponse withContext:finalizedContext];
-				NSDictionary *transformedResponse = [wSelf responseByTransformingResponse:parsedResponse withRequestContext:responseContext forMethodNamed:inMethodName];
-				
-				if ((inValidator != nil) && (!inValidator(transformedResponse, responseContext))) {
+			NSCParameterAssert(!response || [response isKindOfClass:[NSDictionary class]]);
 
-					if (inFailureHandler)
-					inFailureHandler(transformedResponse, responseContext, &notifyDelegate, &shouldRetry);
+			NSDictionary *transformedResponse = [wSelf responseByTransformingResponse:response withRequestContext:context forMethodNamed:method];
+			
+			if (state == IRWebAPIRequestStateSucceeded) {
+			
+				if ((validator != nil) && (!validator(transformedResponse, context))) {
+
+					if (failureBlock)
+						failureBlock(transformedResponse, context);
 									
 				} else {
 				
-					if (inSuccessHandler)
-					inSuccessHandler(transformedResponse, responseContext, &notifyDelegate, &shouldRetry);
+					if (successBlock)
+						successBlock(transformedResponse, context);
 				
 				}
+			
+			} else {
+			
+				if (failureBlock)
+					failureBlock(transformedResponse, context);
+
+			}
 				
-				if (shouldRetry) retryHandler();
-				if (notifyDelegate) notifyDelegateHandler();
-				
-				[wSelf cleanUpForConnection:connection];
-				
-			} forConnection:connection];
-			
-			
-			[self setInternalFailureHandler: ^ {
-			
-				BOOL shouldRetry = NO, notifyDelegate = NO;
-				NSMutableDictionary *responseContext = [wSelf internalResponseContextForConnection:connection];
-				NSDictionary *transformedResopnse = [wSelf responseByTransformingResponse:[NSDictionary dictionary] withRequestContext:responseContext forMethodNamed:inMethodName];
-				
-				if (inFailureHandler)
-					inFailureHandler(transformedResopnse, responseContext, &notifyDelegate, &shouldRetry);
-				
-				if (shouldRetry) retryHandler();
-				if (notifyDelegate) notifyDelegateHandler();
-				
-				[wSelf cleanUpForConnection:connection];
-			
-			} forConnection:connection];
-			
-			
-			[self setInternalDataStore:[NSMutableData data] forConnection:connection];
-			[self setInternalResponseContext:[NSMutableDictionary dictionaryWithObjectsAndKeys:
-			
-				finalizedContext, kIRWebAPIEngineResponseContextOriginalRequestContext,
-			
-			nil] forConnection:connection];
-			
-			[connection start];
-		
 		});
 	
-	};
+	}];
 	
-	return [returnedBlock copy];
+	return operation;
 
 }
-
-
-
-
-
-# pragma mark -
-# pragma mark Connection Delegation
-
-- (void) connection:(NSURLConnection *)inConnection didReceiveData:(NSData *)inData {
-
-	dispatch_async(self.sharedDispatchQueue, ^{
-
-		[[self internalDataStoreForConnection:inConnection] appendData:inData];
-	
-	});
-
-}
-
-- (void) connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response {
-
-	dispatch_async(self.sharedDispatchQueue, ^{
-
-		NSMutableDictionary *responseContext = [self internalResponseContextForConnection:connection];
-		[responseContext setObject:response forKey:kIRWebAPIEngineResponseContextURLResponse];
-	
-	});
-
-}
-
-- (void) connectionDidFinishLoading:(NSURLConnection *)inConnection {
-
-	dispatch_async(self.sharedDispatchQueue, ^{
-	
-		@try {
-
-			[self internalSuccessHandlerForConnection:inConnection]([self internalDataStoreForConnection:inConnection]);
-		
-		} @catch (NSException *e) {
-		
-			[self internalFailureHandlerForConnection:inConnection]();
-		
-		}
-	
-	});
-	
-}
-
-- (void) connection:(NSURLConnection *)inConnection didFailWithError:(NSError *)error {
-
-	dispatch_async(self.sharedDispatchQueue, ^{
-	
-		[[self internalResponseContextForConnection:inConnection] setObject:error forKey:kIRWebAPIEngineUnderlyingError];
-		[self internalFailureHandlerForConnection:inConnection]();
-	
-	});
-
-}
-
-- (BOOL) connection:(NSURLConnection *)connection canAuthenticateAgainstProtectionSpace:(NSURLProtectionSpace *)protectionSpace {
-	
-	return [protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust];
-	
-}
-
-- (void) connection:(NSURLConnection *)connection didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge {
-	
-	if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust])
-		if ([[self.context.baseURL host] isEqualToString:challenge.protectionSpace.host])
-			[challenge.sender useCredential:[NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust] forAuthenticationChallenge:challenge];
-	
-  [challenge.sender continueWithoutCredentialForAuthenticationChallenge:challenge];
-	
-}
-
-
-
-
-
-# pragma mark -
-# pragma mark Associated Objects
-
-//	Notice that blocks are made on the stack so they must be copied before being stored away
-
-
-- (void) setInternalSuccessHandler:(void (^)(NSData *inResponse))inSuccessHandler forConnection:(NSURLConnection *)inConnection {
-
-	objc_setAssociatedObject(inConnection, CFBridgingRetain(kIRWebAPIEngineAssociatedSuccessHandler), inSuccessHandler, OBJC_ASSOCIATION_COPY);
-
-}
-
-- (void (^)(NSData *inResponse)) internalSuccessHandlerForConnection:(NSURLConnection *)inConnection {
-
-	return objc_getAssociatedObject(inConnection, (__bridge const void *)(kIRWebAPIEngineAssociatedSuccessHandler));
-
-}
-
-- (void) setInternalFailureHandler:(void (^)(void))inFailureHandler forConnection:(NSURLConnection *)inConnection {
-
-	objc_setAssociatedObject(inConnection, CFBridgingRetain(kIRWebAPIEngineAssociatedFailureHandler), inFailureHandler, OBJC_ASSOCIATION_COPY);
-
-}
-
-- (void (^)(void)) internalFailureHandlerForConnection:(NSURLConnection *)inConnection {
-
-	return objc_getAssociatedObject(inConnection, (__bridge const void *)(kIRWebAPIEngineAssociatedFailureHandler));
-
-}
-
-- (void) setInternalDataStore:(NSMutableData *)inDataStore forConnection:(NSURLConnection *)inConnection {
-
-	objc_setAssociatedObject(inConnection, (__bridge const void *)(kIRWebAPIEngineAssociatedDataStore), inDataStore, OBJC_ASSOCIATION_RETAIN);
-
-}
-
-- (NSMutableData *) internalDataStoreForConnection:(NSURLConnection *)inConnection {
-
-	return objc_getAssociatedObject(inConnection, (__bridge const void *)(kIRWebAPIEngineAssociatedDataStore));
-	
-}
-
-- (void) setInternalResponseContext:(NSMutableDictionary *)inResponseContext forConnection:(NSURLConnection *)inConnection {
-
-	objc_setAssociatedObject(inConnection, (__bridge const void *)(kIRWebAPIEngineAssociatedResponseContext), inResponseContext, OBJC_ASSOCIATION_RETAIN);
-
-}
-
-- (NSMutableDictionary *) internalResponseContextForConnection:(NSURLConnection *)inConnection {
-
-	return objc_getAssociatedObject(inConnection, (__bridge const void *)(kIRWebAPIEngineAssociatedResponseContext));
-
-}
-
-- (void) cleanUpForConnection:(NSURLConnection *)inConnection {
-
-	dispatch_async(dispatch_get_main_queue(), ^{
-	
-		objc_removeAssociatedObjects(inConnection);
-	
-	});	
-
-}
-
-
-
-
-
-
-
-
-
 
 - (NSMutableArray *) requestTransformersForMethodNamed:(NSString *)inMethodName {
 
@@ -490,78 +168,20 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 
 }
 
-
-
-
-
-- (NSDictionary *) baseRequestContextWithMethodName:(NSString *)inMethodName arguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil {
-
-	NSMutableDictionary *arguments = [NSMutableDictionary dictionary];
-
-	if (inArgumentsOrNil) for (id argumentKey in [inArgumentsOrNil keysOfEntriesPassingTest:^(id key, id object, BOOL *stop) {
-	
-		if ([object isEqual:@""]) return NO;
-		if ([object isEqual:[NSNull null]]) return NO;
-		
-		return YES;
-	
-	}]) [arguments setObject:[inArgumentsOrNil objectForKey:argumentKey] forKey:argumentKey];		
-
-	
-	NSURL *baseURL = [inOptionsOrNil objectForKey:kIRWebAPIEngineRequestHTTPBaseURL];
-	baseURL = baseURL ? baseURL : [self.context baseURLForMethodNamed:inMethodName];
-	
-	NSMutableDictionary *headerFields = [inOptionsOrNil objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields];
-	headerFields = headerFields ? [headerFields mutableCopy] : [NSMutableDictionary dictionary];
-	
-	id httpBody = [inOptionsOrNil objectForKey:kIRWebAPIEngineRequestHTTPBody];
-	httpBody = httpBody ? httpBody : [NSNull null];
-	
-	NSString *httpMethod = [inOptionsOrNil objectForKey:kIRWebAPIEngineRequestHTTPMethod];
-	httpMethod = httpMethod ? [httpMethod copy] : @"GET";
-	
-	IRWebAPIResponseParser responseParser = [inOptionsOrNil objectForKey:kIRWebAPIEngineParser];
-	responseParser = responseParser ? responseParser : self.parser;
-	
-	NSNumber *timeoutValue = [inOptionsOrNil objectForKey:kIRWebAPIRequestTimeout];
-	timeoutValue = timeoutValue ? timeoutValue : [NSNumber numberWithDouble:60.0];
-	
-	NSMutableDictionary *transformedContext = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-	
-		baseURL, kIRWebAPIEngineRequestHTTPBaseURL,
-		headerFields, kIRWebAPIEngineRequestHTTPHeaderFields,
-		arguments, kIRWebAPIEngineRequestHTTPQueryParameters,
-		httpBody, kIRWebAPIEngineRequestHTTPBody,
-		httpMethod, kIRWebAPIEngineRequestHTTPMethod,
-		responseParser, kIRWebAPIEngineParser,
-		inMethodName, kIRWebAPIEngineIncomingMethodName,
-		timeoutValue, kIRWebAPIRequestTimeout,
-	
-	nil];
-			
-
-	for (id optionValueKey in inOptionsOrNil)
-	[transformedContext setValue:[inOptionsOrNil valueForKey:optionValueKey] forKey:optionValueKey];
-
-	return [transformedContext copy];
-
-}
-
-- (NSDictionary *) requestContextByTransformingContext:(NSDictionary *)inContext forMethodNamed:(NSString *)inMethodName {
+- (IRWebAPIRequestContext *) requestContextByTransformingContext:(IRWebAPIRequestContext *)inContext forMethodNamed:(NSString *)inMethodName {
 
 	NSMutableArray *allTransformers = [NSMutableArray array];
 	
 	[allTransformers addObjectsFromArray:self.globalRequestPreTransformers];
 	
 	NSArray *methodSpecificTransformers = [self requestTransformersForMethodNamed:inMethodName];
-	
 	if (methodSpecificTransformers) {
 		[allTransformers addObjectsFromArray:methodSpecificTransformers];
 	}
 	
 	[allTransformers addObjectsFromArray:self.globalRequestPostTransformers];
 	
-	NSDictionary *currentContext = inContext;
+	IRWebAPIRequestContext *currentContext = inContext;
 	
 	for (IRWebAPIRequestContextTransformer aTransformer in allTransformers)
 	currentContext = aTransformer(currentContext);
@@ -570,7 +190,7 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 
 }
 
-- (NSDictionary *) responseByTransformingResponse:(NSDictionary *)inResponse withRequestContext:(NSDictionary *)inRequestContext forMethodNamed:(NSString *)inMethodName {
+- (NSDictionary *) responseByTransformingResponse:(NSDictionary *)inResponse withRequestContext:(IRWebAPIRequestContext *)inRequestContext forMethodNamed:(NSString *)inMethodName {
 
 	NSMutableArray *allTransformers = [NSMutableArray array];
 	[allTransformers addObjectsFromArray:self.globalResponsePreTransformers];
@@ -585,39 +205,5 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	return currentResponse;
 
 }
-
-
-
-
-
-- (NSURLRequest *) requestWithContext:(NSDictionary *)inContext {
-
-	NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:IRWebAPIRequestURLWithQueryParameters(
-	
-		(NSURL *)[inContext objectForKey:kIRWebAPIEngineRequestHTTPBaseURL],
-		[inContext objectForKey:kIRWebAPIEngineRequestHTTPQueryParameters]
-	
-	) cachePolicy:NSURLRequestUseProtocolCachePolicy timeoutInterval:[[inContext objectForKey:kIRWebAPIRequestTimeout] doubleValue]];
-	
-	[request setHTTPShouldHandleCookies:NO];
-	
-	NSDictionary *headerFields;
-	if ((headerFields = [inContext objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields]))
-	for (NSString *headerFieldKey in headerFields)
-	[request setValue:[headerFields objectForKey:headerFieldKey] forHTTPHeaderField:headerFieldKey];
-	
-	NSData *httpBody = [inContext objectForKey:kIRWebAPIEngineRequestHTTPBody];
-	if (![httpBody isEqual:[NSNull null]])
-	[request setHTTPBody:httpBody];
-	
-	[request setHTTPMethod:[inContext objectForKey:kIRWebAPIEngineRequestHTTPMethod]];
-	
-	return [request copy];
-
-}
-
-
-
-
 
 @end

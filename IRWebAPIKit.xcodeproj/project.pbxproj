@@ -65,6 +65,12 @@
 		FF896A6B12A5666D00AE2AF3 /* IRWebAPIInterface.h in Headers */ = {isa = PBXBuildFile; fileRef = FF896A6912A5666D00AE2AF3 /* IRWebAPIInterface.h */; };
 		FF896A6C12A5666D00AE2AF3 /* IRWebAPIInterface.m in Sources */ = {isa = PBXBuildFile; fileRef = FF896A6A12A5666D00AE2AF3 /* IRWebAPIInterface.m */; };
 		FF8974E212A57F3800AE2AF3 /* IRWebAPIInterfaceXOAuthAuthenticating.h in Headers */ = {isa = PBXBuildFile; fileRef = FF8974E112A57F3800AE2AF3 /* IRWebAPIInterfaceXOAuthAuthenticating.h */; };
+		FF9838A31598313D00CFF2DF /* IRWebAPIRequestContext.h in Headers */ = {isa = PBXBuildFile; fileRef = FF9838A11598313D00CFF2DF /* IRWebAPIRequestContext.h */; };
+		FF9838A41598313D00CFF2DF /* IRWebAPIRequestContext.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9838A21598313D00CFF2DF /* IRWebAPIRequestContext.m */; };
+		FF9838A815984A4A00CFF2DF /* IRWebAPIRequestOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = FF9838A615984A4A00CFF2DF /* IRWebAPIRequestOperation.h */; };
+		FF9838A915984A4A00CFF2DF /* IRWebAPIRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9838A715984A4A00CFF2DF /* IRWebAPIRequestOperation.m */; };
+		FF9838AC1598502B00CFF2DF /* IRWebAPIInterceptor.h in Headers */ = {isa = PBXBuildFile; fileRef = FF9838AA1598502B00CFF2DF /* IRWebAPIInterceptor.h */; };
+		FF9838AD1598502B00CFF2DF /* IRWebAPIInterceptor.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9838AB1598502B00CFF2DF /* IRWebAPIInterceptor.m */; };
 		FF9AFB4212EC59040037E930 /* IRWebAPIEngine+LocalCaching.h in Headers */ = {isa = PBXBuildFile; fileRef = FF9AFB4012EC59040037E930 /* IRWebAPIEngine+LocalCaching.h */; };
 		FF9AFB4312EC59040037E930 /* IRWebAPIEngine+LocalCaching.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9AFB4112EC59040037E930 /* IRWebAPIEngine+LocalCaching.m */; };
 		FF9AFB4C12EC597C0037E930 /* IRWebAPIKitDefines.h in Headers */ = {isa = PBXBuildFile; fileRef = FF9AFB4B12EC597C0037E930 /* IRWebAPIKitDefines.h */; };
@@ -74,6 +80,8 @@
 		FF9AFBF312EC5E9F0037E930 /* IRWebAPIKitDefines.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9AFB7F12EC5CB80037E930 /* IRWebAPIKitDefines.m */; };
 		FFB882B714234CBF00DA2876 /* IRRemoteResourceDownloadOperation.h in Headers */ = {isa = PBXBuildFile; fileRef = FFB882B514234CBF00DA2876 /* IRRemoteResourceDownloadOperation.h */; };
 		FFB882B814234CBF00DA2876 /* IRRemoteResourceDownloadOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = FFB882B614234CBF00DA2876 /* IRRemoteResourceDownloadOperation.m */; };
+		FFBEE72E15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.h in Headers */ = {isa = PBXBuildFile; fileRef = FFBEE72C15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.h */; };
+		FFBEE72F15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m in Sources */ = {isa = PBXBuildFile; fileRef = FFBEE72D15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m */; };
 		FFDB8EFD15943C7800FA7E9B /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FFDB8EFC15943C7800FA7E9B /* MobileCoreServices.framework */; };
 		FFDB8EFE15943C8100FA7E9B /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FFDB8EFC15943C7800FA7E9B /* MobileCoreServices.framework */; };
 		FFF5AC741470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.h in Headers */ = {isa = PBXBuildFile; fileRef = FFF5AC721470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.h */; };
@@ -140,6 +148,12 @@
 		FF896A6912A5666D00AE2AF3 /* IRWebAPIInterface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIInterface.h; sourceTree = "<group>"; };
 		FF896A6A12A5666D00AE2AF3 /* IRWebAPIInterface.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRWebAPIInterface.m; sourceTree = "<group>"; };
 		FF8974E112A57F3800AE2AF3 /* IRWebAPIInterfaceXOAuthAuthenticating.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIInterfaceXOAuthAuthenticating.h; sourceTree = "<group>"; };
+		FF9838A11598313D00CFF2DF /* IRWebAPIRequestContext.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIRequestContext.h; sourceTree = "<group>"; };
+		FF9838A21598313D00CFF2DF /* IRWebAPIRequestContext.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRWebAPIRequestContext.m; sourceTree = "<group>"; };
+		FF9838A615984A4A00CFF2DF /* IRWebAPIRequestOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIRequestOperation.h; sourceTree = "<group>"; };
+		FF9838A715984A4A00CFF2DF /* IRWebAPIRequestOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRWebAPIRequestOperation.m; sourceTree = "<group>"; };
+		FF9838AA1598502B00CFF2DF /* IRWebAPIInterceptor.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIInterceptor.h; sourceTree = "<group>"; };
+		FF9838AB1598502B00CFF2DF /* IRWebAPIInterceptor.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRWebAPIInterceptor.m; sourceTree = "<group>"; };
 		FF9AFB4012EC59040037E930 /* IRWebAPIEngine+LocalCaching.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "IRWebAPIEngine+LocalCaching.h"; sourceTree = "<group>"; };
 		FF9AFB4112EC59040037E930 /* IRWebAPIEngine+LocalCaching.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "IRWebAPIEngine+LocalCaching.m"; sourceTree = "<group>"; };
 		FF9AFB4B12EC597C0037E930 /* IRWebAPIKitDefines.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIKitDefines.h; sourceTree = "<group>"; };
@@ -148,6 +162,8 @@
 		FF9AFB7F12EC5CB80037E930 /* IRWebAPIKitDefines.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRWebAPIKitDefines.m; sourceTree = "<group>"; };
 		FFB882B514234CBF00DA2876 /* IRRemoteResourceDownloadOperation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRRemoteResourceDownloadOperation.h; sourceTree = "<group>"; };
 		FFB882B614234CBF00DA2876 /* IRRemoteResourceDownloadOperation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRRemoteResourceDownloadOperation.m; sourceTree = "<group>"; };
+		FFBEE72C15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "IRWebAPIEngine+OperationFiring.h"; sourceTree = "<group>"; };
+		FFBEE72D15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "IRWebAPIEngine+OperationFiring.m"; sourceTree = "<group>"; };
 		FFDB8EFC15943C7800FA7E9B /* MobileCoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MobileCoreServices.framework; path = Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.0.sdk/System/Library/Frameworks/MobileCoreServices.framework; sourceTree = SDKROOT; };
 		FFE2607212D084CB001AF1AF /* IRWebAPIKitEntityDefinesGenerator.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; path = IRWebAPIKitEntityDefinesGenerator.rb; sourceTree = "<group>"; };
 		FFF5AC721470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "IRWebAPIEngine+ExternalTransforms.h"; sourceTree = "<group>"; };
@@ -245,6 +261,14 @@
 				FF7408981296B06F00571D46 /* IRWebAPIEngineContext.m */,
 				FF7408451296A94900571D46 /* IRWebAPIEngine.h */,
 				FF7408461296A94900571D46 /* IRWebAPIEngine.m */,
+				FFBEE72C15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.h */,
+				FFBEE72D15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m */,
+				FF9838A11598313D00CFF2DF /* IRWebAPIRequestContext.h */,
+				FF9838A21598313D00CFF2DF /* IRWebAPIRequestContext.m */,
+				FF9838A615984A4A00CFF2DF /* IRWebAPIRequestOperation.h */,
+				FF9838A715984A4A00CFF2DF /* IRWebAPIRequestOperation.m */,
+				FF9838AA1598502B00CFF2DF /* IRWebAPIInterceptor.h */,
+				FF9838AB1598502B00CFF2DF /* IRWebAPIInterceptor.m */,
 				FF9AFB4012EC59040037E930 /* IRWebAPIEngine+LocalCaching.h */,
 				FF9AFB4112EC59040037E930 /* IRWebAPIEngine+LocalCaching.m */,
 				FF9AFB7112EC5C060037E930 /* IRWebAPIEngine+FormMultipart.h */,
@@ -391,6 +415,10 @@
 				FFB882B714234CBF00DA2876 /* IRRemoteResourceDownloadOperation.h in Headers */,
 				FF7EB68A1467B876002718DC /* IRWebAPIEngine+FormURLEncoding.h in Headers */,
 				FFF5AC741470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.h in Headers */,
+				FF9838A31598313D00CFF2DF /* IRWebAPIRequestContext.h in Headers */,
+				FF9838A815984A4A00CFF2DF /* IRWebAPIRequestOperation.h in Headers */,
+				FF9838AC1598502B00CFF2DF /* IRWebAPIInterceptor.h in Headers */,
+				FFBEE72E15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -567,6 +595,10 @@
 				FFB882B814234CBF00DA2876 /* IRRemoteResourceDownloadOperation.m in Sources */,
 				FF7EB68B1467B876002718DC /* IRWebAPIEngine+FormURLEncoding.m in Sources */,
 				FFF5AC751470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.m in Sources */,
+				FF9838A41598313D00CFF2DF /* IRWebAPIRequestContext.m in Sources */,
+				FF9838A915984A4A00CFF2DF /* IRWebAPIRequestOperation.m in Sources */,
+				FF9838AD1598502B00CFF2DF /* IRWebAPIInterceptor.m in Sources */,
+				FFBEE72F15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -724,6 +756,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1";
@@ -739,6 +772,7 @@
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
 				CLANG_WARN_OBJCPP_ARC_ABI = YES;
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				GCC_C_LANGUAGE_STANDARD = c99;
 				GCC_VERSION = com.apple.compilers.llvm.clang.1_0;
