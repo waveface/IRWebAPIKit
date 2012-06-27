@@ -83,28 +83,6 @@
 
 	self.state = IRWebAPIRequestStateFailed;
 	
-	if ([self.context.engineMethod hasSuffix:@"upload"]) {
-	
-		NSLog(@"gg");
-	
-	}
-	
-//
-//	self.state = IRWebAPIRequestStateFailed;
-//	_connection = nil;
-//	
-//	[self willChangeValueForKey:@"isExecuting"];
-//	_isExecuting = YES;
-//	[self didChangeValueForKey:@"isExecuting"];
-//	
-//	[self willChangeValueForKey:@"isExecuting"];
-//	_isExecuting = NO;
-//	[self didChangeValueForKey:@"isExecuting"];
-//	
-//	[self willChangeValueForKey:@"isFinished"];
-//	_isFinished = YES;
-//	[self didChangeValueForKey:@"isFinished"];
-
 }
 
 - (void) finish {

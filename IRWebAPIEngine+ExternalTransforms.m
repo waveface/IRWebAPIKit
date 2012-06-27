@@ -63,6 +63,7 @@
 	
 	IRWebAPIRequestContext *inferredContext = [IRWebAPIRequestContext new];
 	inferredContext.baseURL = baseURL;
+	inferredContext.engineMethod = baseContext.engineMethod;
 	[headerFields enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
 		[inferredContext setValue:obj forHeaderField:key];
 	}];
