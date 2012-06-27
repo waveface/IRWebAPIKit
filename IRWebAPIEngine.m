@@ -100,38 +100,42 @@
 		IRWebAPIRequestState state = wOperation.state;
 		IRWebAPIRequestContext *context = wOperation.context;
 		NSDictionary *response = (NSDictionary *)wOperation.result;
-		
-		dispatch_async(dispatch_get_main_queue(), ^{
-			
-			NSCParameterAssert((state == IRWebAPIRequestStateSucceeded) || (state == IRWebAPIRequestStateFailed));
-			
-			NSCParameterAssert(!response || [response isKindOfClass:[NSDictionary class]]);
+        
+        @try {
 
+            NSCParameterAssert((state == IRWebAPIRequestStateSucceeded) || (state == IRWebAPIRequestStateFailed));
+			NSCParameterAssert(!response || [response isKindOfClass:[NSDictionary class]]);
+            
 			NSDictionary *transformedResponse = [wSelf responseByTransformingResponse:response withRequestContext:context forMethodNamed:method];
 			
 			if (state == IRWebAPIRequestStateSucceeded) {
-			
+                
 				if ((validator != nil) && (!validator(transformedResponse, context))) {
-
+                    
 					if (failureBlock)
 						failureBlock(transformedResponse, context);
-									
+                    
 				} else {
-				
+                    
 					if (successBlock)
 						successBlock(transformedResponse, context);
-				
+                    
 				}
-			
+                
 			} else {
-			
+                
 				if (failureBlock)
 					failureBlock(transformedResponse, context);
-
+                
 			}
-				
-		});
-	
+            
+        } @catch (NSException *exception) {
+            
+			if (failureBlock)
+				failureBlock(nil, context);
+            
+        }
+		
 	}];
 	
 	return operation;

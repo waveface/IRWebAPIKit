@@ -60,6 +60,10 @@ NSString * const kIRWebAPIEngineRequestContextFormURLEncodingFieldsKey = @"kIRWe
 			[context setValue:obj forFormURLEncodingField:key];
 		}];
 		
+		[[options objectForKey:kIRWebAPIEngineRequestContextFormMultipartFieldsKey] enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+			[context setValue:obj forFormMultipartField:key];
+		}];
+		
 	} validator:validatorBlock successBlock:successBlock failureBlock:failureBlock];
 		
 	[self.queue addOperation:operation];
