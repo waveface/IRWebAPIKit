@@ -12,11 +12,9 @@
 
 @interface IRWebAPIEngine (ExternalTransforms_KnownPrivate)
 
-- (IRWebAPIRequestContext *) baseRequestContextWithMethodName:(NSString *)inMethodName arguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil;
-
 - (IRWebAPIRequestContext *) requestContextByTransformingContext:(IRWebAPIRequestContext *)inContext forMethodNamed:(NSString *)inMethodName;
 
-- (NSURLRequest *) requestWithContext:(IRWebAPIRequestContext *)inContext;
+//- (NSURLRequest *) requestWithContext:(IRWebAPIRequestContext *)inContext;
 
 @end
 
@@ -24,7 +22,9 @@
 
 - (NSURLRequest *) transformedRequestWithRequest:(NSURLRequest *)aRequest usingMethodName:(NSString *)aName {
 
-	IRWebAPIRequestContext *baseContext = [self baseRequestContextWithMethodName:aName arguments:nil options:nil];
+	IRWebAPIRequestContext *baseContext = [IRWebAPIRequestContext new];
+	baseContext.baseURL = [self.context baseURLForMethodNamed:aName];
+	baseContext.engineMethod = aName;
 	
 	NSURL *baseURL = baseContext.baseURL;
 	NSDictionary *headerFields = baseContext.headerFields;

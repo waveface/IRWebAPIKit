@@ -33,8 +33,6 @@
 
 - (id) initWithContext:(IRWebAPIRequestContext *)context {
 
-	NSLog(@"%s %@ %@", __PRETTY_FUNCTION__, context, context.baseURL);
-	
 	self = [super init];
 	if (!self)
 		return;
@@ -66,8 +64,6 @@
 	_interceptor = [IRWebAPIInterceptor new];
 	_interceptor.receiver = self;
 	
-	NSLog(@"self %@, interceptor %@", self, _interceptor);
-	
 	self.connection = [[NSURLConnection alloc] initWithRequest:self.request delegate:(id<NSURLConnectionDelegate>)_interceptor];
 	self.state = IRWebAPIRequestStateRunning;
 	
@@ -86,7 +82,13 @@
 	[super cancel];
 
 	self.state = IRWebAPIRequestStateFailed;
-
+	
+	if ([self.context.engineMethod hasSuffix:@"upload"]) {
+	
+		NSLog(@"gg");
+	
+	}
+	
 //
 //	self.state = IRWebAPIRequestStateFailed;
 //	_connection = nil;

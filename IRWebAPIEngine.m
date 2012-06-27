@@ -96,7 +96,7 @@
 	__weak IRWebAPIRequestOperation *wOperation = operation;
 	
 	[operation setCompletionBlock:^{
-	
+		
 		IRWebAPIRequestState state = wOperation.state;
 		IRWebAPIRequestContext *context = wOperation.context;
 		NSDictionary *response = (NSDictionary *)wOperation.result;
