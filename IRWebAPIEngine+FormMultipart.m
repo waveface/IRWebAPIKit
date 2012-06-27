@@ -6,57 +6,90 @@
 //  Copyright 2011 Iridia Productions. All rights reserved.
 //
 
+#import <objc/runtime.h>
 #import "IRWebAPIEngine+FormMultipart.h"
-
 #import "IRWebAPIEngine+LocalCaching.h"
+#import "IRWebAPIHelpers.h"
 
 NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey = @"kIRWebAPIEngineRequestContextFormMultipartFieldsKey";
+
+static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMultipart) formMultipartFields]";
+
+@implementation IRWebAPIRequestContext (FormMultipart)
+
+- (NSDictionary *) formMultipartFields {
+
+	NSMutableDictionary *formMultipartFields = objc_getAssociatedObject(self, &kFormMultipartFields);
+	
+	if (!formMultipartFields) {
+		formMultipartFields = [NSMutableDictionary dictionary];
+		objc_setAssociatedObject(self, &kFormMultipartFields, formMultipartFields, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	
+	return [formMultipartFields copy];
+
+}
+
+- (void) removeAllFormMultipartFieldValues {
+
+	[self willChangeValueForKey:@"formMultipartFields"];
+	objc_setAssociatedObject(self, &kFormMultipartFields, nil, OBJC_ASSOCIATION_ASSIGN);
+	[self didChangeValueForKey:@"formMultipartFields"];
+
+}
+
+- (void) setValue:(id)obj forFormMultipartField:(NSString *)key {
+
+	NSMutableDictionary *formMultipartFields = objc_getAssociatedObject(self, &kFormMultipartFields);
+	
+	if (!formMultipartFields) {
+		formMultipartFields = [NSMutableDictionary dictionary];
+		objc_setAssociatedObject(self, &kFormMultipartFields, formMultipartFields, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	
+	[self willChangeValueForKey:@"formMultipartFields"];
+	
+	if (obj) {
+		[formMultipartFields setObject:obj forKey:key];
+	} else {
+		[formMultipartFields removeObjectForKey:key];
+	}
+	
+	[self didChangeValueForKey:@"formMultipartFields"];
+
+}
+
+@end
 
 @implementation IRWebAPIEngine (FormMultipart)
 
 + (IRWebAPIRequestContextTransformer) defaultFormMultipartTransformer {
 
-	return [[(^ (NSDictionary *inOriginalContext) {
+	return [(^ (IRWebAPIRequestContext *context) {
 	
-		NSDictionary *formNamesToContents = [inOriginalContext objectForKey:kIRWebAPIEngineRequestContextFormMultipartFieldsKey];
+		NSDictionary *formNamesToContents = context.formMultipartFields;
 		
-		if(!formNamesToContents || ([formNamesToContents count] == 0))
-		return inOriginalContext;
-		
-		NSMutableDictionary *returnedContext = [[inOriginalContext mutableCopy] autorelease];
+		if (![formNamesToContents count])
+			return context;
 		
 		NSError *error;
-		NSURL *fileHandleURL = [[[self class] newTemporaryFileURL] autorelease];
+		NSURL *fileHandleURL = [[self class] newTemporaryFileURL];
 		
 		if (![[NSFileManager defaultManager] createFileAtPath:[fileHandleURL path] contents:[NSData data] attributes:nil]) {
-		
 			NSLog(@"Error creating file for URL %@.", fileHandleURL);
-			return (NSDictionary *)returnedContext;
-		
+			return context;
 		}
 		
 		NSFileHandle *fileHandle = [NSFileHandle fileHandleForWritingToURL:fileHandleURL error:&error];
 		if (!fileHandle) {
-		
 			NSLog(@"Error grabbing file handle for URL %@: %@", fileHandleURL, error);
-			return (NSDictionary *)returnedContext;
-		
+			return context;
 		}
 		
 		[fileHandle truncateFileAtOffset:0];
 		[fileHandle seekToEndOfFile];
 		
-		
-		NSMutableDictionary *headerFields = [returnedContext objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields];
-		if (!headerFields) {
-		
-			headerFields = [NSMutableDictionary dictionary];
-			[returnedContext setObject:headerFields forKey:kIRWebAPIEngineRequestHTTPHeaderFields];
-			
-		}
-		
-		[headerFields setObject:@"8bit" forKey:@"Content-Transfer-Encoding"];
-		
+		[context setValue:@"8bit" forHeaderField:@"Content-Transfer-Encoding"];
 		
 		NSString *mineBoundary = [NSString stringWithFormat:@"----_=_%@_%@_%@_=_----",
 		
@@ -70,7 +103,8 @@ NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey = @"kIRWebA
 		NSData *newLineData = [@"\r\n" dataUsingEncoding:NSUTF8StringEncoding];
 		NSData *separatorData = [@"--" dataUsingEncoding:NSUTF8StringEncoding];
 		
-		[headerFields setObject:[NSString stringWithFormat:@"multipart/form-data; boundary=%@", mineBoundary] forKey:@"Content-Type"];
+		NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", mineBoundary];
+		[context setValue:contentType forHeaderField:@"Content-Type"];
 		
 		//	Start writing
 		
@@ -148,26 +182,14 @@ NSString * const kIRWebAPIEngineRequestContextFormMultipartFieldsKey = @"kIRWebA
 		
 		[fileHandle closeFile];
 		
-		[returnedContext setObject:[NSData dataWithContentsOfMappedFile:[fileHandleURL path]] forKey:kIRWebAPIEngineRequestHTTPBody];
+		[context setBody:[NSData dataWithContentsOfMappedFile:[fileHandleURL path]]];
+		[context addCacheFileURL:fileHandleURL];
+		[context removeAllFormMultipartFieldValues];
+		[context setMethod:@"POST"];
 		
-		
-		NSMutableArray *temporaryFileURLs = [returnedContext objectForKey:kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey];
-		if (!temporaryFileURLs) {
-		
-			temporaryFileURLs = [NSMutableArray array];
-			[returnedContext setObject:temporaryFileURLs forKey:kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey];
-			
-		}
-		
-		[temporaryFileURLs addObject:fileHandleURL];
-		
-		[returnedContext setObject:temporaryFileURLs forKey:kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey];
-		[returnedContext removeObjectForKey:kIRWebAPIEngineRequestContextFormMultipartFieldsKey];
-		[returnedContext setObject:@"POST" forKey:kIRWebAPIEngineRequestHTTPMethod];
-		
-		return (NSDictionary *)returnedContext;
+		return context;
 	
-	}) copy] autorelease];
+	}) copy];
 
 }
 

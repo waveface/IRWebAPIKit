@@ -6,21 +6,25 @@
 //  Copyright 2010 Iridia Productions. All rights reserved.
 //
 
-#import "IRWebAPIContext.h"
+#import "IRWebAPIEngineContext.h"
+
+@interface IRWebAPIEngineContext ()
+
+@property (nonatomic, readwrite, copy) NSURL *baseURL;
+
+@end
 
 
-
-
-
-@implementation IRWebAPIContext
-
-@synthesize baseURL;
+@implementation IRWebAPIEngineContext
+@synthesize baseURL = _baseURL;
 
 - (id) initWithBaseURL:(NSURL *)inBaseURL {
 
-	self = [super init]; if (!self) return nil;
+	self = [super init];
+	if (!self)
+		return nil;
 	
-	baseURL = [inBaseURL retain];
+	_baseURL = [inBaseURL copy];
 	
 	return self;
 
@@ -32,10 +36,6 @@
 
 }
 
-
-
-
-
 - (NSURL *) baseURLForMethodNamed:(NSString *)inMethodName {
 
 	return [NSURL URLWithString:inMethodName relativeToURL:self.baseURL];
@@ -45,5 +45,7 @@
 @end
 
 
+@implementation IRWebAPIEngineMutableContext : IRWebAPIEngineContext
+@dynamic baseURL;
 
-
+@end

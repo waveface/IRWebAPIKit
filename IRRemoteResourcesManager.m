@@ -81,9 +81,9 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 	queue = [[NSOperationQueue alloc] init];
 	queue.maxConcurrentOperationCount = 1;
 	operationQueue = dispatch_queue_create("iridia.remoteResourcesManager.operationQueue", DISPATCH_QUEUE_SERIAL);
-	enqueuedOperations = [[NSMutableArray array] retain];
+	enqueuedOperations = [NSMutableArray array];
 	
-	allOperations = [[NSMutableDictionary dictionary] retain];
+	allOperations = [NSMutableDictionary dictionary];
 	allOperationsQueue = dispatch_queue_create("iridia.remoteResourcesManager.operationsManagingQueue", DISPATCH_QUEUE_SERIAL);
 		
 	return self;
@@ -96,20 +96,10 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 	
 	if (operationQueue)
 		dispatch_release(operationQueue);
-	
-	[queue release];
-	[enqueuedOperations release];
-	[cacheDirectoryPath release];
-	
-	[onRemoteResourceDownloadOperationWillBegin release];
-	
-	[allOperations release];
-	
+		
 	if (allOperationsQueue)
 		dispatch_release(allOperationsQueue);
 		
-	[super dealloc];
-
 }
 
 
@@ -290,12 +280,12 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 - (IRRemoteResourceDownloadOperation *) prospectiveOperationForURL:(NSURL *)anURL enqueue:(BOOL)enqueuesOperation {
 
-	__block __typeof__(self) nrSelf = self;
+	__weak IRRemoteResourcesManager *wSelf = self;
 	__block IRRemoteResourceDownloadOperation *operation = nil;
 		
 	operation = [IRRemoteResourceDownloadOperation operationWithURL:anURL path:[self pathForCachedContentsOfRemoteURL:anURL usedProspectiveURL:NULL] prelude: ^ {
 	
-		[nrSelf.delegate remoteResourcesManager:nrSelf didBeginDownloadingResourceAtURL:operation.url];
+		[wSelf.delegate remoteResourcesManager:wSelf didBeginDownloadingResourceAtURL:operation.url];
 		
 	} completion: ^ {
 	
@@ -305,15 +295,13 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 		
 		if (didFinish) {
 		
-			[operation retain];
-		
 			dispatch_async(dispatch_get_main_queue(), ^ {
 	
 				[operation invokeCompletionBlocks];
-				[operation autorelease];
+				operation = nil;
 				
-				[nrSelf notifyUpdatedResourceForRemoteURL:operationURL];
-				[nrSelf.delegate remoteResourcesManager:nrSelf didFinishDownloadingResourceAtURL:operationURL];
+				[wSelf notifyUpdatedResourceForRemoteURL:operationURL];
+				[wSelf.delegate remoteResourcesManager:wSelf didFinishDownloadingResourceAtURL:operationURL];
 			
 			});
 		
@@ -321,23 +309,25 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 			dispatch_async(dispatch_get_main_queue(), ^ {
 	
-				[nrSelf.delegate remoteResourcesManager:nrSelf didFailDownloadingResourceAtURL:operationURL];
+				[wSelf.delegate remoteResourcesManager:wSelf didFailDownloadingResourceAtURL:operationURL];
 			
+				operation = nil;
+				
 			});
 		
 		}
 		
 		dispatch_async(dispatch_get_main_queue(), ^{
 		
-			[nrSelf beginSuspendingOperationQueue];
+			[wSelf beginSuspendingOperationQueue];
 			
-			[nrSelf performInBackground: ^ {
+			[wSelf performInBackground: ^ {
 			
-				[nrSelf enqueueOperationsIfNeeded];
+				[wSelf enqueueOperationsIfNeeded];
 
 				dispatch_async(dispatch_get_main_queue(), ^{
 				
-					[nrSelf endSuspendingOperationQueue];
+					[wSelf endSuspendingOperationQueue];
 				
 				});
 				
@@ -390,32 +380,36 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 		
 	}
 
-	__block __typeof__(self) nrSelf = self;
+	__weak IRRemoteResourcesManager *wSelf = self;
 	
-	[nrSelf performInBackground: ^ {
+	[wSelf performInBackground: ^ {
 	
-		__block IRRemoteResourceDownloadOperation *operation = [self operationWithURL:anURL];
+		IRRemoteResourceDownloadOperation *operation = [wSelf operationWithURL:anURL];
 		
 		if (!operation) {
 			
-			operation = [self prospectiveOperationForURL:anURL enqueue:YES];
+			operation = [wSelf prospectiveOperationForURL:anURL enqueue:YES];
 			operation.queuePriority = priority;
 			
-			[nrSelf addOperation:operation];
+			__weak IRRemoteResourceDownloadOperation *wOperation = operation;
+			
+			[wSelf addOperation:operation];
 			[operation appendCompletionBlock:^{
-				[nrSelf removeOperation:operation];
+				[wSelf removeOperation:wOperation];
 			}];
 						
 		} else {
 		
-			if (forcesReload && [nrSelf.queue.operations containsObject:operation]) {
+			if (forcesReload && [wSelf.queue.operations containsObject:operation]) {
 			
 				operation = [operation continuationOperationCancellingCurrentOperation:YES];
 				operation.queuePriority = priority;
 				
-				[nrSelf addOperation:operation];
+				__weak IRRemoteResourceDownloadOperation *wOperation = operation;
+				
+				[wSelf addOperation:operation];
 				[operation appendCompletionBlock:^{
-					[nrSelf removeOperation:operation];
+					[wSelf removeOperation:wOperation];
 				}];
 			
 			}
@@ -430,7 +424,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 				if (![[NSFileManager defaultManager] fileExistsAtPath:capturedPath]) {
 				
-					[nrSelf performInBackground:^{
+					[wSelf performInBackground:^{
 						aBlock(nil);
 					}];
 					
@@ -438,7 +432,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 				}
 				
-				[nrSelf performInBackground: ^ {
+				[wSelf performInBackground: ^ {
 				
 					NSCParameterAssert([[NSFileManager defaultManager] fileExistsAtPath:capturedPath]);
 					aBlock([NSURL fileURLWithPath:capturedPath]);
@@ -453,7 +447,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 			[self beginSuspendingOperationQueue];
 			
-			[nrSelf performInBackground: ^ {
+			[wSelf performInBackground: ^ {
 				
 				[self enqueueOperationsIfNeeded];
 				
@@ -461,7 +455,6 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 					//	Hoist it — This is last come, first serve	
 					
-					[[operation retain] autorelease];
 					[self.enqueuedOperations removeObject:operation];
 					[self.enqueuedOperations insertObject:operation atIndex:0];
 					
@@ -545,18 +538,20 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 - (NSString *) cacheDirectoryPath {
 
-	if (cacheDirectoryPath)
-		return cacheDirectoryPath;
+	if (!cacheDirectoryPath) {
 		
-	NSString *prospectivePath = [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:NSStringFromClass([self class])];
+		NSString *prospectivePath = [[NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0] stringByAppendingPathComponent:NSStringFromClass([self class])];
+		
+		NSError *cacheDirectoryCreationError;	
+		if (![[NSFileManager defaultManager] createDirectoryAtPath:prospectivePath withIntermediateDirectories:YES attributes:nil error:&cacheDirectoryCreationError]) {
+			NSLog(@"Error occurred while creating or assuring cache directory: %@", cacheDirectoryCreationError);
+			return nil;
+		}
+		
+		cacheDirectoryPath = [prospectivePath copy];
 	
-	NSError *cacheDirectoryCreationError;	
-	if (![[NSFileManager defaultManager] createDirectoryAtPath:prospectivePath withIntermediateDirectories:YES attributes:nil error:&cacheDirectoryCreationError]) {
-		NSLog(@"Error occurred while creating or assuring cache directory: %@", cacheDirectoryCreationError);
-		return nil;
 	}
 	
-	cacheDirectoryPath = [prospectivePath retain];
 	return cacheDirectoryPath;
 
 }
@@ -580,7 +575,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 - (void) notifyUpdatedResourceForRemoteURL:(NSURL *)inRemoteURL {
 
-	inRemoteURL = [[inRemoteURL copy] autorelease];
+	inRemoteURL = [inRemoteURL copy];
 	
 	dispatch_async(dispatch_get_main_queue(), ^ {
 

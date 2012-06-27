@@ -11,12 +11,46 @@
 #import "IRWebAPIEngine+LocalCaching.h"
 #import "IRWebAPIHelpers.h"
 
+static NSString * const kCacheFileURLS = @"-[IRWebAPIRequestContext(LocalCaching) cacheFileURLs]";
 
-NSString * const kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey = @"kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey";
-NSString * const kIRWebAPIEngineLocallocalCacheDirectoryPath = @"kIRWebAPIEngineLocalCachingBasePath";
+@implementation IRWebAPIRequestContext (LocalCaching)
 
+- (NSArray *) cacheFileURLs {
 
+	return [objc_getAssociatedObject(self, &kCacheFileURLS) copy];
 
+}
+
+- (void) removeAllCacheFileURLValues {
+
+	[self willChangeValueForKey:@"cacheFileURLs"];
+	objc_setAssociatedObject(self, &kCacheFileURLS, nil, OBJC_ASSOCIATION_ASSIGN);
+	[self didChangeValueForKey:@"cacheFileURLs"];
+
+}
+
+- (void) addCacheFileURL:(NSURL *)obj {
+
+	NSMutableArray *cacheFileURLs = objc_getAssociatedObject(self, &kCacheFileURLS);
+	
+	if (!cacheFileURLs) {
+		cacheFileURLs = [NSMutableArray array];
+		objc_setAssociatedObject(self, &cacheFileURLs, cacheFileURLs, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+	}
+	
+	[self willChangeValueForKey:@"cacheFileURLs"];
+	
+	if (obj) {
+		[cacheFileURLs addObject:obj];
+	} else {
+		[cacheFileURLs removeObject:obj];
+	}
+	
+	[self didChangeValueForKey:@"cacheFileURLs"];
+
+}
+
+@end
 
 
 @implementation IRWebAPIEngine (LocalCaching)
@@ -26,58 +60,37 @@ NSString * const kIRWebAPIEngineLocallocalCacheDirectoryPath = @"kIRWebAPIEngine
 	NSString *applicationCacheDirectory = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
 	NSString *preferredCacheDirectoryPath = [applicationCacheDirectory stringByAppendingPathComponent:NSStringFromClass([self class])];
 	
-	NSError *error;
-	if (![[NSFileManager defaultManager] createDirectoryAtPath:preferredCacheDirectoryPath withIntermediateDirectories:YES attributes:nil error:&error]) {
+	if ([[NSFileManager defaultManager] createDirectoryAtPath:preferredCacheDirectoryPath withIntermediateDirectories:YES attributes:nil error:nil])
+		return [NSURL fileURLWithPath:[preferredCacheDirectoryPath stringByAppendingPathComponent:IRWebAPIKitNonce()]];
 	
-		NSLog(@"Erorr occurred while assuring cache directory existence: %@", error);
-		return nil;
-	
-	};
-	
-	NSURL *fileURL = [[NSURL fileURLWithPath:[preferredCacheDirectoryPath stringByAppendingPathComponent:IRWebAPIKitNonce()]] retain];	
-	return fileURL;
+	return nil;
 	
 }
 
 
 + (BOOL) cleanUpTemporaryFileAtURL:(NSURL *)inTemporaryFileURL {
 
-	NSError *error;
-	
-	if (![[NSFileManager defaultManager] removeItemAtURL:inTemporaryFileURL error:&error]) {
-	
-		NSLog(@"Error removing file at URL %@: %@", inTemporaryFileURL, error);
-		return NO;
-	
-	} else {
-	
-		NSLog(@"Removed %@", inTemporaryFileURL);
-	
-	}
-	
-	return YES;
+	return [[NSFileManager defaultManager] removeItemAtURL:inTemporaryFileURL error:nil];
 
 }
 
 
 + (IRWebAPIResponseContextTransformer) defaultCleanUpTemporaryFilesResponseTransformer {
 
-	return [[(^ (NSDictionary *inParsedResponse, NSDictionary *inResponseContext) {
+	return [(^ (NSDictionary *inParsedResponse, IRWebAPIRequestContext *inResponseContext) {
 	
-		NSArray *cachedFileURLs = [[inResponseContext objectForKey:kIRWebAPIEngineResponseContextOriginalRequestContext] objectForKey:kIRWebAPIEngineRequestContextLocalCachingTemporaryFileURLsKey];
+		NSArray *cachedFileURLs = inResponseContext.cacheFileURLs;
 		
-	//	DISPATCH_QUEUE_PRIORITY_BACKGROUND is unrecognized by LLVM 2.0 so we’re using the number it uses
-		dispatch_async(dispatch_get_global_queue(-2, 0), ^ {
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^ {
 		
-			if (cachedFileURLs)
 			for (NSURL *aFileURL in cachedFileURLs)
-			[self cleanUpTemporaryFileAtURL:aFileURL];
+				[self cleanUpTemporaryFileAtURL:aFileURL];
 	
 		});
 
 		return inParsedResponse;
 	
-	}) copy] autorelease];
+	}) copy];
 
 }
 

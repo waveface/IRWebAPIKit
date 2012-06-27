@@ -8,28 +8,26 @@
 
 #import "IRWebAPIKit.h"
 
-
-
-
-
 @implementation IRWebAPIInterface
 
-@synthesize engine, authenticator;
+@synthesize engine = _engine, authenticator = _authenticator;
+
+- (id) initWithEngine:(IRWebAPIEngine *)inEngine authenticator:(IRWebAPIAuthenticator *)inAuthenticator {
+
+	self = [super init];
+	if (!self)
+		return nil;
+	
+	_engine = inEngine;
+	_authenticator = inAuthenticator;
+	
+	return self;
+
+}
 
 - (id) init {
 
 	return [self initWithEngine:nil authenticator:nil];
-
-}
-
-- (id) initWithEngine:(IRWebAPIEngine *)inEngine authenticator:(IRWebAPIAuthenticator *)inAuthenticator {
-
-	self = [super init]; if (!self) return nil;
-	
-	engine = [inEngine retain];
-	authenticator = [inAuthenticator retain];
-	
-	return self;
 
 }
 

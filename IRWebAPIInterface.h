@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class IRWebAPIEngine, IRWebAPIAuthenticator, IRWebAPIContext;
+@class IRWebAPIEngine, IRWebAPIAuthenticator, IRWebAPIEngineContext;
 
 @interface IRWebAPIInterface : NSObject
 

@@ -7,23 +7,6 @@
 //
 
 
-
-
-
-#if 0 && defined(DEBUG)
-
-	#define IRWebAPIKitLog( s, ... ) NSLog( @"<%s : (%d)> %@",__FUNCTION__, __LINE__, [NSString stringWithFormat:(s), ##__VA_ARGS__] )
-
-#else
-
-	#define IRWebAPIKitLog( s, ... ) 
-
-#endif
-
-
-
-
-
 #import "IRWebAPIKitDefines.h"
 
 #import "IRWebAPIResponseParser.h"
@@ -31,7 +14,13 @@
 #import "IRWebAPIHelpers.h"
 
 #import "IRWebAPIEngine.h"
-#import "IRWebAPIContext.h"
+#import "IRWebAPIEngineContext.h"
+
+#import "IRWebAPIEngine+OperationFiring.h"
+#import "IRWebAPIEngine+FormMultipart.h"
+#import "IRWebAPIEngine+FormURLEncoding.h"
+#import "IRWebAPIEngine+LocalCaching.h"
+
 #import "IRWebAPIAuthenticator.h"
 #import "IRWebAPICredentials.h"
 #import "IRWebAPIInterface.h"
@@ -42,18 +31,14 @@
 
 #import "IRWebAPIInterfaceURLShortening.h"
 
-#import "IRWebAPIGoogleReaderAuthenticator.h"
 #import "IRWebAPIXOAuthAuthenticator.h"
 
-#import "IRWebAPITwitterInterface.h"
-#import "IRWebAPIGoogleReaderInterface.h"
-
 #import "IRWebAPIImageStorageProvider.h"
-#import "IRWebAPITwitPicInterface.h"
 
 #import "IRRemoteResourcesManager.h"
 
-
+#import "IRWebAPIRequestContext.h"
+#import "IRWebAPIRequestOperation.h"
 
 
 

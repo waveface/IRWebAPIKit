@@ -12,6 +12,6 @@
 
 @interface IRWebAPIInterface (Validators)
 
-+ (IRWebAPIResposeValidator) defaultNoErrorValidator;
++ (IRWebAPIResponseValidator) defaultNoErrorValidator;
 
 @end

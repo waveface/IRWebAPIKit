@@ -7,14 +7,14 @@
 //
 
 #import "IRWebAPIEngine+ExternalTransforms.h"
+#import "IRWebAPIRequestContext.h"
+#import "IRWebAPIHelpers.h"
 
 @interface IRWebAPIEngine (ExternalTransforms_KnownPrivate)
 
-- (NSDictionary *) baseRequestContextWithMethodName:(NSString *)inMethodName arguments:(NSDictionary *)inArgumentsOrNil options:(NSDictionary *)inOptionsOrNil;
+- (IRWebAPIRequestContext *) requestContextByTransformingContext:(IRWebAPIRequestContext *)inContext forMethodNamed:(NSString *)inMethodName;
 
-- (NSDictionary *) requestContextByTransformingContext:(NSDictionary *)inContext forMethodNamed:(NSString *)inMethodName;
-
-- (NSURLRequest *) requestWithContext:(NSDictionary *)inContext;
+//- (NSURLRequest *) requestWithContext:(IRWebAPIRequestContext *)inContext;
 
 @end
 
@@ -22,14 +22,16 @@
 
 - (NSURLRequest *) transformedRequestWithRequest:(NSURLRequest *)aRequest usingMethodName:(NSString *)aName {
 
-	NSDictionary *baseContext = [self baseRequestContextWithMethodName:aName arguments:nil options:nil];
+	IRWebAPIRequestContext *baseContext = [IRWebAPIRequestContext new];
+	baseContext.baseURL = [self.context baseURLForMethodNamed:aName];
+	baseContext.engineMethod = aName;
 	
-	NSURL *baseURL = [baseContext objectForKey:kIRWebAPIEngineRequestHTTPBaseURL];
-	NSDictionary *headerFields = [baseContext objectForKey:kIRWebAPIEngineRequestHTTPHeaderFields];
-	NSDictionary *arguments = [baseContext objectForKey:kIRWebAPIEngineRequestHTTPQueryParameters];
-	NSData *httpBody = [baseContext objectForKey:kIRWebAPIEngineRequestHTTPBody];
-	NSString *httpMethod = [baseContext objectForKey:kIRWebAPIEngineRequestHTTPMethod];
-	IRWebAPIResponseParser responseParser = [baseContext objectForKey:kIRWebAPIEngineParser];
+	NSURL *baseURL = baseContext.baseURL;
+	NSDictionary *headerFields = baseContext.headerFields;
+	NSDictionary *arguments = baseContext.queryParams;
+	NSData *httpBody = baseContext.body;
+	NSString *httpMethod = baseContext.method;
+	IRWebAPIResponseParser responseParser = baseContext.parser;
 	
 	if ([[aRequest allHTTPHeaderFields] count])
 		headerFields = [aRequest allHTTPHeaderFields];
@@ -59,22 +61,20 @@
 	
 	}
 	
-	NSDictionary *inferredContext = [NSDictionary dictionaryWithObjectsAndKeys:
+	IRWebAPIRequestContext *inferredContext = [IRWebAPIRequestContext new];
+	inferredContext.baseURL = baseURL;
+	[headerFields enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+		[inferredContext setValue:obj forHeaderField:key];
+	}];
+	[arguments enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+		[inferredContext setValue:obj forQueryParam:key];
+	}];
+	inferredContext.body = httpBody;
+	inferredContext.method = httpMethod;
+	inferredContext.parser = responseParser;
 	
-		baseURL, kIRWebAPIEngineRequestHTTPBaseURL,
-		headerFields, kIRWebAPIEngineRequestHTTPHeaderFields,
-		arguments, kIRWebAPIEngineRequestHTTPQueryParameters,
-		httpBody, kIRWebAPIEngineRequestHTTPBody,
-		httpMethod, kIRWebAPIEngineRequestHTTPMethod,
-		responseParser, kIRWebAPIEngineParser,
-		aName, kIRWebAPIEngineIncomingMethodName,
-	
-	nil];
-	
-	NSDictionary *transformedContext = [self requestContextByTransformingContext:inferredContext forMethodNamed:aName];
-	NSURLRequest *returnedRequest = [self requestWithContext:transformedContext];
-	
-	return returnedRequest;
+	IRWebAPIRequestContext *transformedContext = [self requestContextByTransformingContext:inferredContext forMethodNamed:aName];
+	return [[IRWebAPIRequestOperation alloc] initWithContext:transformedContext].request;
 
 }
 

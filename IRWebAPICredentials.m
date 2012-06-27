@@ -46,24 +46,6 @@
 
 }
 
-- (void) dealloc {
-
-	self.identifier = nil;
-	self.identifierPlaceholder = nil;
-	self.identifierLabelText = nil;
-	
-	self.qualifier = nil;
-	self.qualifierPlaceholder = nil;
-	self.qualifierLabelText = nil;
-	
-	self.displayName = nil;
-	self.notes = nil;
-	self.userInfo = nil;
-	
-	[super dealloc];
-
-}
-
 - (id) initWithCoder:(NSCoder *)inCoder {
 
 	self = [self init]; if (!self) return nil;
@@ -98,26 +80,9 @@
 
 }
 
-- (id)copyWithZone:(NSZone *)zone {
+- (id) copyWithZone:(NSZone *)zone {
 
 	return self;
-
-//	Although copying sounds good, it breaks our hash in an authentication manager
-
-	IRWebAPICredentials *copy = [[[self class] allocWithZone: zone] init];
-	
-	copy.identifier = self.identifier;
-	copy.identifierPlaceholder = self.identifierPlaceholder;
-	copy.identifierLabelText = self.identifierLabelText;
-	copy.qualifier = self.qualifier;
-	copy.qualifierPlaceholder = self.qualifierPlaceholder;
-	copy.qualifierLabelText = self.qualifierLabelText;
-	copy.displayName = self.displayName;
-	copy.notes = self.notes;
-	copy.userInfo = [[self.userInfo copy] autorelease];
-	copy.authenticated = self.authenticated;
-
-	return copy;
 
 }
 
