@@ -290,7 +290,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 	} completion: ^ {
 	
 		BOOL didFinish = !!(operation.path);
-		NSString *operationPath = operation.path;
+		//	NSString *operationPath = operation.path;
 		NSURL *operationURL = operation.url;
 		
 		if (didFinish) {
