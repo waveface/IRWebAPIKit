@@ -141,10 +141,8 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 
 - (void) ensureResponseParserExistence {
 	
-	if (self.parser) return;
-	
-	NSLog(@"Warning: IRWebAPIEngine is designed to work with a parser.  Without one, the response will be sent as a default dictionary.");
-	self.parser = IRWebAPIResponseDefaultParserMake();
+	if (!self.parser)
+		self.parser = IRWebAPIResponseDefaultParserMake();
 	
 }
 
@@ -177,8 +175,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	NSMutableDictionary *displayedContext = [inContext mutableCopy];
 	[displayedContext setObject:@"< REMOVED> " forKey:kIRWebAPIEngineRequestHTTPBody];
 	
-	NSLog(@"Context: %@", displayedContext);
-
 //	This can potentially clog up the wirings
 //	IRWebAPIResponseParser defaultParser = IRWebAPIResponseDefaultParserMake();
 //	NSDictionary *debugOutput = defaultParser(inData);
@@ -251,7 +247,7 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 	};
 	
 	NSDictionary *finalizedContext = [self requestContextByTransformingContext:[self baseRequestContextWithMethodName:inMethodName arguments:inArgumentsOrNil options:inOptionsOrNil] forMethodNamed:inMethodName];
-		
+
 	NSURLRequest *request = [self requestWithContext:finalizedContext];
 
 	void (^returnedBlock) (void) = ^ {
@@ -364,8 +360,6 @@ NSString * const kIRWebAPIEngineUnderlyingError = @"kIRWebAPIEngineUnderlyingErr
 		
 		} @catch (NSException *e) {
 		
-			NSLog(@"Handle Exception: %@ %@", e, inConnection);
-			
 			[self internalFailureHandlerForConnection:inConnection]();
 		
 		}
