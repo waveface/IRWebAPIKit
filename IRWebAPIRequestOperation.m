@@ -35,7 +35,7 @@
 
 	self = [super init];
 	if (!self)
-		return;
+		return nil;
 
 	_context = context;
 	

@@ -8,9 +8,7 @@
 
 #import "IRWebAPIResponseParser.h"
 
-
-
-
+NSDictionary * IRWebAPIResponseDictionarize (id<NSObject> incomingObject);
 
 NSDictionary * IRWebAPIResponseDictionarize (id<NSObject> incomingObject) {
 

@@ -84,6 +84,11 @@
 		FFBEE72F15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m in Sources */ = {isa = PBXBuildFile; fileRef = FFBEE72D15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m */; };
 		FFDB8EFD15943C7800FA7E9B /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FFDB8EFC15943C7800FA7E9B /* MobileCoreServices.framework */; };
 		FFDB8EFE15943C8100FA7E9B /* MobileCoreServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = FFDB8EFC15943C7800FA7E9B /* MobileCoreServices.framework */; };
+		FFDE51EC159AEF870086F9B0 /* IRWebAPIRequestContext.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9838A21598313D00CFF2DF /* IRWebAPIRequestContext.m */; };
+		FFDE51EE159AEF940086F9B0 /* IRWebAPIRequestOperation.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9838A715984A4A00CFF2DF /* IRWebAPIRequestOperation.m */; };
+		FFDE51EF159AEFA90086F9B0 /* IRWebAPIInterceptor.m in Sources */ = {isa = PBXBuildFile; fileRef = FF9838AB1598502B00CFF2DF /* IRWebAPIInterceptor.m */; };
+		FFDE51FF159AF8F10086F9B0 /* IRWebAPIEngine+FormMultipart.h in Headers */ = {isa = PBXBuildFile; fileRef = FF9AFB7112EC5C060037E930 /* IRWebAPIEngine+FormMultipart.h */; };
+		FFDE5200159AF9030086F9B0 /* IRWebAPIEngine+OperationFiring.m in Sources */ = {isa = PBXBuildFile; fileRef = FFBEE72D15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.m */; };
 		FFF5AC741470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.h in Headers */ = {isa = PBXBuildFile; fileRef = FFF5AC721470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.h */; };
 		FFF5AC751470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.m in Sources */ = {isa = PBXBuildFile; fileRef = FFF5AC731470FFC600512775 /* IRWebAPIEngine+ExternalTransforms.m */; };
 /* End PBXBuildFile section */
@@ -383,6 +388,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FF460DB4149CFF3F00DB7F0B /* IRRemoteResourceDownloadOperation.h in Headers */,
+				FFDE51FF159AF8F10086F9B0 /* IRWebAPIEngine+FormMultipart.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -572,6 +578,10 @@
 				FF59A3BE1441C9F400BB1FDC /* IRWebAPIInterface+Validators.m in Sources */,
 				FF460D07149CF80600DB7F0B /* IRWebAPIEngine+FormURLEncoding.m in Sources */,
 				FF460D09149CF80B00DB7F0B /* IRWebAPIEngine+ExternalTransforms.m in Sources */,
+				FFDE51EC159AEF870086F9B0 /* IRWebAPIRequestContext.m in Sources */,
+				FFDE51EE159AEF940086F9B0 /* IRWebAPIRequestOperation.m in Sources */,
+				FFDE51EF159AEFA90086F9B0 /* IRWebAPIInterceptor.m in Sources */,
+				FFDE5200159AF9030086F9B0 /* IRWebAPIEngine+OperationFiring.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
