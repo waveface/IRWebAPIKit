@@ -391,12 +391,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			operation = [wSelf prospectiveOperationForURL:anURL enqueue:YES];
 			operation.queuePriority = priority;
 			
-			__weak IRRemoteResourceDownloadOperation *wOperation = operation;
-			
 			[wSelf addOperation:operation];
-			[operation appendCompletionBlock:^{
-				[wSelf removeOperation:wOperation];
-			}];
 						
 		} else {
 		
@@ -405,12 +400,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				operation = [operation continuationOperationCancellingCurrentOperation:YES];
 				operation.queuePriority = priority;
 				
-				__weak IRRemoteResourceDownloadOperation *wOperation = operation;
-				
 				[wSelf addOperation:operation];
-				[operation appendCompletionBlock:^{
-					[wSelf removeOperation:wOperation];
-				}];
 			
 			}
 		
@@ -442,6 +432,16 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			}];
 			
 		}
+    
+    [operation appendCompletionBlock:^{
+
+      double delayInSeconds = 2.0;
+      dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
+      dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        [wSelf removeOperation:operation];
+      });
+
+    }];
 		
 		dispatch_async(dispatch_get_main_queue(), ^{
 
