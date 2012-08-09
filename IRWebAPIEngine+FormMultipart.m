@@ -158,7 +158,7 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 				[fileHandle writeData:newLineData];
 				[fileHandle writeData:newLineData];
 			
-				[fileHandle writeData:[NSData dataWithContentsOfMappedFile:[(NSURL *)incomingObject path]]];
+				[fileHandle writeData:[NSData dataWithContentsOfFile:[(NSURL *)incomingObject path] options:NSDataReadingMappedIfSafe error:nil]];
 			
 			} else if ([incomingObject isKindOfClass:[NSData class]]) {
 			
@@ -182,7 +182,7 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 		
 		[fileHandle closeFile];
 		
-		[context setBody:[NSData dataWithContentsOfMappedFile:[fileHandleURL path]]];
+		[context setBody:[NSData dataWithContentsOfFile:[fileHandleURL path] options:NSDataReadingMappedIfSafe error:nil]];
 		[context addCacheFileURL:fileHandleURL];
 		[context removeAllFormMultipartFieldValues];
 		[context setMethod:@"POST"];
