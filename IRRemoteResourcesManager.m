@@ -402,13 +402,14 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 				[wSelf addOperation:operation];
 			
-			} else if ([operation isCancelled]) {
-
-        [wSelf removeOperation:operation];
-        operation = [wSelf prospectiveOperationForURL:anURL enqueue:YES];
-        operation.queuePriority = priority;
-        [wSelf addOperation:operation];
-      }
+			}
+//      else if ([operation isCancelled]) {
+//
+//        [wSelf removeOperation:operation];
+//        operation = [wSelf prospectiveOperationForURL:anURL enqueue:YES];
+//        operation.queuePriority = priority;
+//        [wSelf addOperation:operation];
+//      }
 		
 		}
 		
