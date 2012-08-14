@@ -402,7 +402,13 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 				[wSelf addOperation:operation];
 			
-			}
+			} else if ([operation isCancelled]) {
+
+        [wSelf removeOperation:operation];
+        operation = [wSelf prospectiveOperationForURL:anURL enqueue:YES];
+        operation.queuePriority = priority;
+        [wSelf addOperation:operation];
+      }
 		
 		}
 		
@@ -415,7 +421,10 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				if (![[NSFileManager defaultManager] fileExistsAtPath:capturedPath]) {
 				
 					[wSelf performInBackground:^{
-						aBlock(nil);
+
+            [wSelf removeOperation:operation];
+            aBlock(nil);
+
 					}];
 					
 					return;
@@ -426,6 +435,11 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 				
 					NSCParameterAssert([[NSFileManager defaultManager] fileExistsAtPath:capturedPath]);
 					aBlock([NSURL fileURLWithPath:capturedPath]);
+          double delayInSeconds = 2.0;
+          dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
+          dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+            [wSelf removeOperation:operation];
+          });
 										
 				}];
 				
@@ -433,16 +447,6 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			
 		}
     
-    [operation appendCompletionBlock:^{
-
-      double delayInSeconds = 2.0;
-      dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, delayInSeconds * NSEC_PER_SEC);
-      dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-        [wSelf removeOperation:operation];
-      });
-
-    }];
-		
 		dispatch_async(dispatch_get_main_queue(), ^{
 
 			[self beginSuspendingOperationQueue];
@@ -521,9 +525,15 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			return (BOOL)![legitimateOperations containsObject:evaluatedObject];
 		});
 		
-		for (NSOperation *anOperation in insertedOperations)
-		if (![self.queue.operations containsObject:anOperation])
-				[self.queue addOperation:anOperation];
+		for (IRRemoteResourceDownloadOperation *anOperation in insertedOperations) {
+      if (![self.queue.operations containsObject:anOperation]) {
+        // sometimes the delegate will be nil, so add a workaround here
+        if (!anOperation.delegate) {
+          anOperation.delegate = self;
+        }
+        [self.queue addOperation:anOperation];
+      }
+    }
 		
 		[self.enqueuedOperations removeObjectsInArray:insertedOperations];
 		
