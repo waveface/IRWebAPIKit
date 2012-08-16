@@ -339,8 +339,8 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 	
 	operation.delegate = self;
 	
-	if (enqueuesOperation)
-		[self.enqueuedOperations insertObject:operation atIndex:0];
+//	if (enqueuesOperation)
+//		[self.enqueuedOperations insertObject:operation atIndex:0];
 	
 	return operation;
 
@@ -408,6 +408,10 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
         isNewOperation = YES;
 			}
 		
+      if (priority > operation.queuePriority) {
+        operation.queuePriority = priority;
+      }
+
 		}
 		
     if (isNewOperation) {
@@ -447,34 +451,45 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
       }
 
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        [self beginSuspendingOperationQueue];
+      });
+      
+      [self.enqueuedOperations insertObject:operation atIndex:0];
+      [self enqueueOperationsIfNeeded];
+      
+      dispatch_sync(dispatch_get_main_queue(), ^{
+        [self endSuspendingOperationQueue];
+      });
+
     }
 
-    dispatch_async(dispatch_get_main_queue(), ^{
-
-      [self beginSuspendingOperationQueue];
-
-      [wSelf performInBackground: ^ {
-
-        [self enqueueOperationsIfNeeded];
-
-        if ([self.enqueuedOperations containsObject:operation]) {
-
-          //	Hoist it — This is last come, first serve
-
-          [self.enqueuedOperations removeObject:operation];
-          [self.enqueuedOperations insertObject:operation atIndex:0];
-
-        }
-
-        dispatch_async(dispatch_get_main_queue(), ^{
-
-          [self endSuspendingOperationQueue];
-
-        });
-
-      }];
-
-    });
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//
+//      [self beginSuspendingOperationQueue];
+//
+//      [wSelf performInBackground: ^ {
+//
+//        if ([self.enqueuedOperations containsObject:operation]) {
+//
+//          //	Hoist it — This is last come, first serve
+//
+//          [self.enqueuedOperations removeObject:operation];
+//          [self.enqueuedOperations insertObject:operation atIndex:0];
+//
+//        }
+//
+//        [self enqueueOperationsIfNeeded];
+//
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//
+//          [self endSuspendingOperationQueue];
+//
+//        });
+//
+//      }];
+//
+//    });
 
 	}];
 
@@ -523,9 +538,9 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			return (BOOL)![sortedCurrentOperations containsObject:evaluatedObject];			
 		});
 		
-		NSArray *postponedOperations = filtered(sortedCurrentOperations, ^ (id evaluatedObject, NSDictionary *bindings) {
-			return (BOOL)![legitimateOperations containsObject:evaluatedObject];
-		});
+//		NSArray *postponedOperations = filtered(sortedCurrentOperations, ^ (id evaluatedObject, NSDictionary *bindings) {
+//			return (BOOL)![legitimateOperations containsObject:evaluatedObject];
+//		});
 		
     for (IRRemoteResourceDownloadOperation *anOperation in insertedOperations) {
       if (![self.queue.operations containsObject:anOperation]) {
@@ -539,9 +554,9 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
     [self.enqueuedOperations removeObjectsInArray:insertedOperations];
 		
-		[postponedOperations enumerateObjectsUsingBlock: ^ (IRRemoteResourceDownloadOperation *anOperation, NSUInteger idx, BOOL *stop) {
-			[self.enqueuedOperations addObject:[anOperation continuationOperationCancellingCurrentOperation:YES]];
-		}];
+//		[postponedOperations enumerateObjectsUsingBlock: ^ (IRRemoteResourceDownloadOperation *anOperation, NSUInteger idx, BOOL *stop) {
+//			[self.enqueuedOperations addObject:[anOperation continuationOperationCancellingCurrentOperation:YES]];
+//		}];
 
 	}
 
