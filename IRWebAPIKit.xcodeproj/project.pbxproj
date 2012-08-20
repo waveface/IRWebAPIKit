@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		130EFA1115E2205400254163 /* JSONKit.h in Headers */ = {isa = PBXBuildFile; fileRef = 130EFA1015E2205400254163 /* JSONKit.h */; };
 		FF0D4C0B12ED96E500D9B97D /* IRWebAPIHelpers.m in Sources */ = {isa = PBXBuildFile; fileRef = FF0D4C0A12ED96E500D9B97D /* IRWebAPIHelpers.m */; };
 		FF0E874112B9F41C00DF571E /* IRWebAPIInterfaceURLShortening.h in Headers */ = {isa = PBXBuildFile; fileRef = FF0E874012B9F41C00DF571E /* IRWebAPIInterfaceURLShortening.h */; };
 		FF0E93E9132BB07000A316E1 /* IRRemoteResourcesManager.h in Headers */ = {isa = PBXBuildFile; fileRef = FF0E93E7132BB07000A316E1 /* IRRemoteResourcesManager.h */; };
@@ -104,6 +105,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		130EFA1015E2205400254163 /* JSONKit.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = JSONKit.h; sourceTree = "<group>"; };
 		FF0D4C0A12ED96E500D9B97D /* IRWebAPIHelpers.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = IRWebAPIHelpers.m; sourceTree = "<group>"; };
 		FF0E874012B9F41C00DF571E /* IRWebAPIInterfaceURLShortening.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRWebAPIInterfaceURLShortening.h; sourceTree = "<group>"; };
 		FF0E93E7132BB07000A316E1 /* IRRemoteResourcesManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IRRemoteResourcesManager.h; sourceTree = "<group>"; };
@@ -328,6 +330,7 @@
 		FF74080C1296A88400571D46 = {
 			isa = PBXGroup;
 			children = (
+				130EFA1015E2205400254163 /* JSONKit.h */,
 				FF9AFB4B12EC597C0037E930 /* IRWebAPIKitDefines.h */,
 				FF9AFB7F12EC5CB80037E930 /* IRWebAPIKitDefines.m */,
 				FF7408291296A8E000571D46 /* IRWebAPIKit.h */,
@@ -425,6 +428,7 @@
 				FF9838A815984A4A00CFF2DF /* IRWebAPIRequestOperation.h in Headers */,
 				FF9838AC1598502B00CFF2DF /* IRWebAPIInterceptor.h in Headers */,
 				FFBEE72E15986BB40057BEA0 /* IRWebAPIEngine+OperationFiring.h in Headers */,
+				130EFA1115E2205400254163 /* JSONKit.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

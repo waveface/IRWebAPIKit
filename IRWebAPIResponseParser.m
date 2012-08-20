@@ -7,6 +7,7 @@
 //
 
 #import "IRWebAPIResponseParser.h"
+#import "JSONKit.h"
 
 NSDictionary * IRWebAPIResponseDictionarize (id<NSObject> incomingObject);
 
@@ -102,7 +103,14 @@ IRWebAPIResponseParser IRWebAPIResponseDefaultJSONParserMake () {
 		
 		parserBlock = [^ (NSData *incomingData) {
 		
-			id results = [NSJSONSerialization JSONObjectWithData:incomingData options:NSJSONReadingAllowFragments error:nil];
+      NSError *error = nil;
+      // sometimes the response from cloud contains invalid utf-8 characters,
+      // so we deserialize it with loosely restriction
+      id results = [incomingData objectFromJSONDataWithParseOptions:JKParseOptionLooseUnicode error:&error];
+
+      if (error && [incomingData length] != 0) {
+        NSLog(@"Unable to parse JSON response, error:%@", error);
+      }
 			
 			return IRWebAPIResponseDictionarize(results);
 			
