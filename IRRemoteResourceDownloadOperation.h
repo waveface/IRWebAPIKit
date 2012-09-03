@@ -22,9 +22,9 @@
 
 - (void) remoteResourceDownloadOperationWillBegin:(IRRemoteResourceDownloadOperation *)anOperation;
 
-//	@optional
+@optional
 //	- (void) remoteResourceDownloadOperation:(IRRemoteResourceDownloadOperation *)anOperation didChangeProgress:(float_t)currentProgress;
-//	- (void) remoteResourceDownloadOperationDidEnd:(IRRemoteResourceDownloadOperation *)anOperation successfully:(BOOL)wasCompleted;
+- (void) remoteResourceDownloadOperationDidEnd:(IRRemoteResourceDownloadOperation *)anOperation successfully:(BOOL)wasCompleted;
 
 @end
 

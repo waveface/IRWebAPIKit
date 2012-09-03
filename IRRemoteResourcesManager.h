@@ -49,6 +49,8 @@ enum {
 
 @property (nonatomic, readwrite, copy) void (^onRemoteResourceDownloadOperationWillBegin)(IRRemoteResourceDownloadOperation *anOperation);
 
+@property (nonatomic, readwrite, copy) void (^ onRemoteResourceDownloadOperationDidEnd) (IRRemoteResourceDownloadOperation *anOperation);
+
 - (void) retrieveResourceAtURL:(NSURL *)inRemoteURL withCompletionBlock:(void(^)(NSURL *tempFileURLOrNil))aBlock;
 - (void) retrieveResourceAtURL:(NSURL *)inRemoteURL usingPriority:(NSOperationQueuePriority)priority forced:(BOOL)forcesReload withCompletionBlock:(void(^)(NSURL *tempFileURLOrNil))aBlock;
 
