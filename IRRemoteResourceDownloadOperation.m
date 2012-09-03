@@ -239,9 +239,11 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 - (void) connectionDidFinishLoading:(NSURLConnection *)connection {
 
     NSLog(@"Success: %@", [self underlyingRequest].URL);
-
-	if ([self isCancelled])
-			return;	
+	if ([self isCancelled]) {
+    if ([self.delegate respondsToSelector:@selector(remoteResourceDownloadOperationDidEnd:successfully:)])
+      [self.delegate remoteResourceDownloadOperationDidEnd:self successfully:NO];
+    return;
+  }
 	
 	[self onOriginalQueue: ^ {
 	
@@ -278,6 +280,9 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 			self.executing = NO;
 			self.finished = YES;
 		}
+    
+    if ([self.delegate respondsToSelector:@selector(remoteResourceDownloadOperationDidEnd:successfully:)])
+      [self.delegate remoteResourceDownloadOperationDidEnd:self successfully:YES];
 	
 	}];
 
