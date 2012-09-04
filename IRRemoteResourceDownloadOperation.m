@@ -225,7 +225,6 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 
 - (void) connectionDidFinishLoading:(NSURLConnection *)connection {
 
-    NSLog(@"Success: %@", [self underlyingRequest].URL);
 	if ([self isCancelled]) {
     if ([self.delegate respondsToSelector:@selector(remoteResourceDownloadOperationDidEnd:successfully:)])
       [self.delegate remoteResourceDownloadOperationDidEnd:self successfully:NO];
