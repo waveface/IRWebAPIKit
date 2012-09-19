@@ -252,6 +252,7 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 				
 				NSString *fromPath = self.path;
 				NSString *toPath = [[self.path stringByDeletingPathExtension] stringByAppendingPathExtension:pathExtension];
+
 				NSError *error = nil;
 				
 				BOOL didMove = [fm moveItemAtPath:fromPath toPath:toPath error:&error];

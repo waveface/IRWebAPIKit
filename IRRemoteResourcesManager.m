@@ -339,8 +339,8 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 	
 	operation.delegate = self;
 	
-//	if (enqueuesOperation)
-//		[self.enqueuedOperations insertObject:operation atIndex:0];
+	if (enqueuesOperation)
+		[self.enqueuedOperations insertObject:operation atIndex:0];
 	
 	return operation;
 
@@ -416,7 +416,9 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			}
 		
       if (priority > operation.queuePriority) {
+
         operation.queuePriority = priority;
+
       }
 
 		}
@@ -426,6 +428,8 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
       if (aBlock) {
 
         [operation appendCompletionBlock: ^ {
+
+          NSAssert(![operation isCancelled], @"canceled operation shouldn't call completion blocks");
 
           NSString *capturedPath = operation.path;
 
@@ -458,45 +462,38 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
       }
 
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        [self beginSuspendingOperationQueue];
-      });
-      
-      [self.enqueuedOperations insertObject:operation atIndex:0];
-      [self enqueueOperationsIfNeeded];
-      
-      dispatch_sync(dispatch_get_main_queue(), ^{
-        [self endSuspendingOperationQueue];
+    }
+
+    if (isNewOperation || operation.queuePriority > NSOperationQueuePriorityNormal) {
+
+      dispatch_async(dispatch_get_main_queue(), ^{
+
+        [wSelf beginSuspendingOperationQueue];
+
+        [wSelf performInBackground: ^ {
+
+          if (!isNewOperation && [wSelf.enqueuedOperations containsObject:operation]) {
+
+            //	Hoist it — This is last come, first serve
+
+            [wSelf.enqueuedOperations removeObject:operation];
+            [wSelf.enqueuedOperations insertObject:operation atIndex:0];
+
+          }
+
+          [wSelf enqueueOperationsIfNeeded];
+
+          dispatch_async(dispatch_get_main_queue(), ^{
+
+            [wSelf endSuspendingOperationQueue];
+
+          });
+
+        }];
+
       });
 
     }
-
-//    dispatch_async(dispatch_get_main_queue(), ^{
-//
-//      [self beginSuspendingOperationQueue];
-//
-//      [wSelf performInBackground: ^ {
-//
-//        if ([self.enqueuedOperations containsObject:operation]) {
-//
-//          //	Hoist it — This is last come, first serve
-//
-//          [self.enqueuedOperations removeObject:operation];
-//          [self.enqueuedOperations insertObject:operation atIndex:0];
-//
-//        }
-//
-//        [self enqueueOperationsIfNeeded];
-//
-//        dispatch_async(dispatch_get_main_queue(), ^{
-//
-//          [self endSuspendingOperationQueue];
-//
-//        });
-//
-//      }];
-//
-//    });
 
 	}];
 
@@ -545,9 +542,9 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			return (BOOL)![sortedCurrentOperations containsObject:evaluatedObject];			
 		});
 		
-//		NSArray *postponedOperations = filtered(sortedCurrentOperations, ^ (id evaluatedObject, NSDictionary *bindings) {
-//			return (BOOL)![legitimateOperations containsObject:evaluatedObject];
-//		});
+		NSArray *postponedOperations = filtered(sortedCurrentOperations, ^ (id evaluatedObject, NSDictionary *bindings) {
+			return (BOOL)![legitimateOperations containsObject:evaluatedObject];
+		});
 		
     for (IRRemoteResourceDownloadOperation *anOperation in insertedOperations) {
       if (![self.queue.operations containsObject:anOperation]) {
@@ -561,9 +558,12 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
     [self.enqueuedOperations removeObjectsInArray:insertedOperations];
 		
-//		[postponedOperations enumerateObjectsUsingBlock: ^ (IRRemoteResourceDownloadOperation *anOperation, NSUInteger idx, BOOL *stop) {
-//			[self.enqueuedOperations addObject:[anOperation continuationOperationCancellingCurrentOperation:YES]];
-//		}];
+		[postponedOperations enumerateObjectsUsingBlock: ^ (IRRemoteResourceDownloadOperation *anOperation, NSUInteger idx, BOOL *stop) {
+      // create a new download operation, because we don't support resume downloading
+      IRRemoteResourceDownloadOperation *newOperation = [self prospectiveOperationForURL:anOperation.url enqueue:YES];
+      [self removeOperation:anOperation];
+      [self addOperation:newOperation];
+		}];
 
 	}
 
