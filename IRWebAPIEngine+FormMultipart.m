@@ -110,29 +110,17 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 		
 		for (id incomingFormName in formNamesToContents) {
 		
-		//	--<BOUNDARY> ↵
+      if ([incomingFormName isEqualToString:@"file_data"]) {
+        continue;
+      }
+
+      //	--<BOUNDARY> ↵
 			[fileHandle writeData:separatorData];
 			[fileHandle writeData:boundaryData];
 			[fileHandle writeData:newLineData];
 			
 			id incomingObject = [formNamesToContents objectForKey:incomingFormName];
-			if ([incomingObject isKindOfClass:[NSString class]]) {
-			
-			//	Append contents of string
-			
-				[fileHandle writeData:[[NSString stringWithFormat:
-				
-					@"Content-Disposition: form-data; name=\"%@\"",
-					incomingFormName
-				
-				] dataUsingEncoding:NSUTF8StringEncoding]];
-				
-				[fileHandle writeData:newLineData];
-				[fileHandle writeData:newLineData];
-			
-				[fileHandle writeData:[(NSString *)incomingObject dataUsingEncoding:NSUTF8StringEncoding]];
-			
-			} else if ([incomingObject isKindOfClass:[NSURL class]]) {
+      if ([incomingFormName isEqualToString:@"file"]) {
 			
 			//	Append contents of file
 			
@@ -140,14 +128,14 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 				
 					@"Content-Disposition: form-data; name=\"%@\"; filename=\"%@\"",
 					incomingFormName,
-					[[(NSURL *)incomingObject path] lastPathComponent]
+					incomingObject
 				
 				] dataUsingEncoding:NSUTF8StringEncoding]];
 				
 				[fileHandle writeData:newLineData];
 				
 				
-				NSString *mimeType = IRWebAPIKitMIMETypeOfExtension([[[(NSURL *)incomingObject path] lastPathComponent] pathExtension]);
+				NSString *mimeType = IRWebAPIKitMIMETypeOfExtension([incomingObject pathExtension]);
 				
 				[fileHandle writeData:[[NSString stringWithFormat:
 				
@@ -158,11 +146,27 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 				[fileHandle writeData:newLineData];
 				[fileHandle writeData:newLineData];
 			
-				[fileHandle writeData:[NSData dataWithContentsOfFile:[(NSURL *)incomingObject path] options:NSDataReadingMappedIfSafe error:nil]];
+				[fileHandle writeData:[formNamesToContents objectForKey:@"file_data"]];
 			
+			} else if ([incomingObject isKindOfClass:[NSString class]]) {
+
+          //	Append contents of string
+
+				[fileHandle writeData:[[NSString stringWithFormat:
+
+                                @"Content-Disposition: form-data; name=\"%@\"",
+                                incomingFormName
+
+                                ] dataUsingEncoding:NSUTF8StringEncoding]];
+
+				[fileHandle writeData:newLineData];
+				[fileHandle writeData:newLineData];
+
+				[fileHandle writeData:[(NSString *)incomingObject dataUsingEncoding:NSUTF8StringEncoding]];
+
 			} else if ([incomingObject isKindOfClass:[NSData class]]) {
 			
-				[fileHandle writeData:(NSData *)incomingObject];
+        [fileHandle writeData:(NSData *)incomingObject];
 			
 			} else {
 			
