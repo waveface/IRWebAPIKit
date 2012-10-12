@@ -367,7 +367,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
 - (void) retrieveResourceAtURL:(NSURL *)inRemoteURL withCompletionBlock:(void(^)(NSURL *tempFileURLOrNil))aBlock {
 
-	[self retrieveResourceAtURL:inRemoteURL usingPriority:NSOperationQueuePriorityNormal forced:NO withCompletionBlock:aBlock];
+	[self retrieveResourceAtURL:inRemoteURL usingPriority:NSOperationQueuePriorityHigh forced:NO withCompletionBlock:aBlock];
 
 }
 
