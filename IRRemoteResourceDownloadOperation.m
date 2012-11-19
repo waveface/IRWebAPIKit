@@ -230,13 +230,14 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
       [self.delegate remoteResourceDownloadOperationDidEnd:self successfully:NO];
     return;
   }
-	
+
 	[self onOriginalQueue: ^ {
 	
 		[self.fileHandle closeFile];
 		self.fileHandle = nil;
 		
-		if (self.mimeType) {
+    // no need to move downloaded file for JSON response
+		if (self.mimeType && ![self.mimeType isEqualToString:@"application/json"]) {
 		
 			//	If there is a MIME type available, rename the underlying file
 			
