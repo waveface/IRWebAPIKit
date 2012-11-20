@@ -435,12 +435,17 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
           if (![[NSFileManager defaultManager] fileExistsAtPath:capturedPath]) {
 
-            [wSelf performInBackground:^{
-
-              [wSelf removeOperation:operation];
-              aBlock(nil);
-
-            }];
+            if ([operation.mimeType isEqualToString:@"application/json"]) {
+              [wSelf performInBackground:^{
+                [wSelf removeOperation:operation];
+                aBlock(nil);
+              }];
+            } else {
+              [wSelf performInBackground:^{
+                [wSelf removeOperation:operation];
+                aBlock([NSURL URLWithString:@"invalidFileURL"]);
+              }];
+            }
 
             return;
 
