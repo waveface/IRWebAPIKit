@@ -64,16 +64,26 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 
 }
 
+- (id)init {
+
+  self = [super init];
+
+  if (self) {
+    self.actualDispatchQueue = dispatch_queue_create("com.waveface.download.queue", DISPATCH_QUEUE_SERIAL);
+  }
+
+  return self;
+
+}
+
 - (void) dealloc {
 
 	[_connection cancel];
-	
+	dispatch_release(self.actualDispatchQueue);
+
 }
 
 - (void) onMainQueue:(void(^)(void))aBlock {
-	
-	if (!self.actualDispatchQueue)
-		self.actualDispatchQueue = dispatch_get_current_queue();
 	
 	if ([NSThread isMainThread]) {
 		aBlock();
@@ -99,13 +109,13 @@ NSString * const kIRRemoteResourceDownloadOperationURL = @"IRRemoteResourceDownl
 		return;
 	}
 
-	if ([self isCancelled]) {
-		self.finished = YES;
-		return;
-	}
-	
-	self.executing = YES;
-	[self main];
+  if ([self isCancelled]) {
+    self.finished = YES;
+    return;
+  }
+
+  self.executing = YES;
+  [self main];
 
 }
 
