@@ -170,7 +170,7 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 			
 			} else {
 			
-				NSAssert(NO, @"%s Can’t understand incoming object %@", __PRETTY_FUNCTION__, incomingObject);
+				NSCAssert(NO, @"%s Can’t understand incoming object %@", __PRETTY_FUNCTION__, incomingObject);
 			
 			}
 

@@ -429,7 +429,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 
         [operation appendCompletionBlock: ^ {
 
-          NSAssert(![operation isCancelled], @"canceled operation shouldn't call completion blocks");
+          NSCAssert(![operation isCancelled], @"canceled operation shouldn't call completion blocks");
 
           NSString *capturedPath = operation.path;
 
@@ -643,7 +643,7 @@ NSString * const kIRRemoteResourcesManagerDidRetrieveResourceNotification = @"IR
 			
 		#else
 		
-			NSParameterAssert(NO);
+			NSCParameterAssert(NO);
 			
 		#endif
 		
