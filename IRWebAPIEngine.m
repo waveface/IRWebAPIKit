@@ -144,7 +144,10 @@
 
 - (NSMutableArray *) requestTransformersForMethodNamed:(NSString *)inMethodName {
 
-	NSMutableArray *returnedArray = [self.requestTransformers objectForKey:inMethodName];
+  NSMutableArray *returnedArray = nil;
+  
+  @synchronized(self.requestTransformers) {
+    returnedArray = [self.requestTransformers objectForKey:inMethodName];
 	
 	if (!returnedArray) {
 	
@@ -152,14 +155,18 @@
 		[self.requestTransformers setObject:returnedArray forKey:inMethodName];
 		
 	}
+  }
 	
-	return returnedArray;
+  return returnedArray;
 
 }
 
 - (NSMutableArray *) responseTransformersForMethodNamed:(NSString *)inMethodName {
 
-	NSMutableArray *returnedArray = [self.responseTransformers objectForKey:inMethodName];
+  NSMutableArray *returnedArray = nil;
+  
+  @synchronized(self.responseTransformers) {
+    returnedArray = [self.responseTransformers objectForKey:inMethodName];
 	
 	if (!returnedArray) {
 	
@@ -167,8 +174,9 @@
 		[self.responseTransformers setObject:returnedArray forKey:inMethodName];
 		
 	}
+  }
 	
-	return returnedArray;
+  return returnedArray;
 
 }
 
