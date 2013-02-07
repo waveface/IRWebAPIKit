@@ -42,7 +42,7 @@
 
 	self.globalRequestPostTransformerBlock = ^ (IRWebAPIRequestContext *context) {
 		
-		BOOL isRequestAuthenticated = (BOOL)(!!(self.retrievedTokenSecret)),
+		BOOL isRequestAuthenticated = (BOOL)(!!(wSelf.retrievedTokenSecret)),
 			isPOST = [@"POST" isEqual:context.method],
 			removesQueryParameters = NO;
 		
