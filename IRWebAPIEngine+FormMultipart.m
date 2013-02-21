@@ -191,6 +191,13 @@ static NSString * const kFormMultipartFields = @"-[IRWebAPIRequestContext(FormMu
 		[context removeAllFormMultipartFieldValues];
 		[context setMethod:@"POST"];
 		
+      if ([[NSFileManager defaultManager] fileExistsAtPath:[fileHandleURL path]]) {
+        NSError *error = nil;
+        [[NSFileManager defaultManager] removeItemAtURL:fileHandleURL error:&error];
+        if (error != nil) {
+          NSLog(@"failed to remove cached file for multipart transformer: %@", fileHandleURL);
+        }
+      }
 		return context;
 	
 	}) copy];
